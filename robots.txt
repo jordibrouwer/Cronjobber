@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /.git/
+Disallow: /uploads.ini
+
+Sitemap: https://jordibrw.nl/sitemap.xml

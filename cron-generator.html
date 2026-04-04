@@ -1,202 +1,535 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Cron Job Code Generator</title>
+    <title>Cron Planner - Cron Job Generator &amp; Cron Expression Builder</title>
+    <meta name="description" content="Cron Planner is a cron job generator and cron expression builder for crontab, Node.js, Python, Java, Docker and Kubernetes. Validate schedules, preview run times, and copy production-ready code.">
+    <meta name="author" content="Jordi Brouwer">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="theme-color" content="#0f172a">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Cron Planner">
+    <meta property="og:title" content="Cron Planner - Cron Job Generator &amp; Cron Expression Builder">
+    <meta property="og:description" content="Build cron expressions, validate schedules, preview upcoming runs, and generate code for crontab, Node.js, Python, Java, Docker, and Kubernetes.">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Cron Planner - Cron Job Generator &amp; Cron Expression Builder">
+    <meta name="twitter:description" content="Build cron expressions, validate schedules, preview upcoming runs, and generate code for multiple runtimes.">
+    <link rel="canonical" href="https://jordibrw.nl/cron-generator.html">
+    <link rel="sitemap" type="application/xml" href="https://jordibrw.nl/sitemap.xml">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .tab-active { @apply bg-blue-500 text-white; }
-        .tab-inactive { @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300; }
-        #canvas-heatmap { border: 1px solid #ccc; }
+        body {
+            background: radial-gradient(circle at 15% 10%, #fef9c3 0%, #f8fafc 45%, #e2e8f0 100%);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(8px);
+        }
+        .step-pill {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+        }
+        .step-pill.active {
+            border-color: #0369a1;
+            background: #e0f2fe;
+            color: #0c4a6e;
+        }
+        .step-pill.done {
+            border-color: #15803d;
+            background: #dcfce7;
+            color: #14532d;
+        }
+        .map-chip {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+        }
+        .map-chip.highlight {
+            border-color: #0ea5e9;
+            background: #e0f2fe;
+            color: #0c4a6e;
+        }
+        #canvas-heatmap {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        .fade-in {
+            animation: fadeIn 260ms ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
-    <div class="container mx-auto p-4">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold">🕐 Advanced Cron Job Code Generator</h1>
-            <a href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.868-.013-1.703-2.782.603-3.369-1.343-3.369-1.343-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.544 2.914 1.19.092-.926.35-1.557.636-1.914-2.22-.253-4.555-1.112-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0110 4.817c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.137 18.194 20 14.44 20 10.017 20 4.484 15.522 0 10 0z" clip-rule="evenodd"/>
-                </svg>
-                <span>GitHub</span>
-            </a>
-        </div>
+<body class="text-slate-900">
+    <div id="toast" class="fixed top-4 right-4 hidden px-4 py-2 rounded-lg bg-slate-900 text-white text-sm z-50"></div>
 
-        <!-- Info Section -->
-        <div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 rounded-lg p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="container mx-auto px-4 py-6 lg:py-8 max-w-7xl">
+        <header class="mb-6 lg:mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h3 class="font-bold text-blue-900 dark:text-blue-300 mb-1">📋 Cron Basics</h3>
-                    <p class="text-sm text-blue-800 dark:text-blue-200">Cron is a time-based job scheduler used in Unix/Linux systems to automate recurring tasks at specified intervals.</p>
+                    <h1 id="app-title" class="text-3xl lg:text-4xl font-black tracking-tight">Cron Planner</h1>
+                    <p id="hero-subtitle" class="text-slate-600 mt-1">Build your schedule in 3 clear steps, validate it instantly, then generate code.</p>
+                    <p id="hero-summary" class="text-slate-700 mt-3 max-w-3xl text-sm sm:text-base">Use this free cron job generator to build crontab expressions, preview schedule runs, and generate production-ready snippets for Bash, Node.js, Python, Java, Docker, and Kubernetes.</p>
                 </div>
-                <div>
-                    <h3 class="font-bold text-blue-900 dark:text-blue-300 mb-1">⚙️ How It Works</h3>
-                    <p class="text-sm text-blue-800 dark:text-blue-200">Set your desired schedule using the fields on the left, get a cron expression, and deploy it to your system or application.</p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-blue-900 dark:text-blue-300 mb-1">💡 Tip</h3>
-                    <p class="text-sm text-blue-800 dark:text-blue-200">Use Natural Language input for quick conversions, explore 50+ presets, or manually configure each cron field.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Grid Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            <!-- Left Sidebar (Cron Inputs) -->
-            <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-bold mb-4" title="Configure each cron time field independently">Cron Fields</h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1 cursor-help" title="Which minute(s) to run: 0-59, * for every minute, */5 for every 5 minutes">Minute (0-59)</label>
-                        <input type="text" id="minute" value="*" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        <select id="minute-preset" class="w-full mt-1 px-2 py-1 text-sm border rounded dark:bg-gray-700">
-                            <option value="*">Every minute (*)</option>
-                            <option value="0">At :00</option>
-                            <option value="*/5">Every 5 min (*/5)</option>
-                            <option value="*/15">Every 15 min (*/15)</option>
-                            <option value="*/30">Every 30 min (*/30)</option>
-                            <option value="0,30">At :00 and :30</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium mb-1 cursor-help" title="Which hour(s) to run: 0-23 (24-hour format), * for every hour">Hour (0-23)</label>
-                        <input type="text" id="hour" value="*" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        <select id="hour-preset" class="w-full mt-1 px-2 py-1 text-sm border rounded dark:bg-gray-700">
-                            <option value="*">Every hour (*)</option>
-                            <option value="0">Midnight (0)</option>
-                            <option value="9">9 AM</option>
-                            <option value="*/2">Every 2 hrs (*/2)</option>
-                            <option value="9-17">Work hours (9-17)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium mb-1 cursor-help" title="Which day of the month: 1-31, * for every day">Day of Month (1-31)</label>
-                        <input type="text" id="dom" value="*" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        <select id="dom-preset" class="w-full mt-1 px-2 py-1 text-sm border rounded dark:bg-gray-700">
-                            <option value="*">Every day (*)</option>
-                            <option value="1">First day (1)</option>
-                            <option value="15">Mid-month (15)</option>
-                            <option value="1,15">1st & 15th</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium mb-1 cursor-help" title="Which month(s): 1-12 (1=January, 12=December), * for every month">Month (1-12)</label>
-                        <input type="text" id="month" value="*" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        <select id="month-preset" class="w-full mt-1 px-2 py-1 text-sm border rounded dark:bg-gray-700">
-                            <option value="*">Every month (*)</option>
-                            <option value="1">January</option>
-                            <option value="1-6">Jan-Jun (1-6)</option>
-                            <option value="12">December</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium mb-1 cursor-help" title="Which day(s) of week: 0=Sunday to 6=Saturday, 1-5 for weekdays, 0,6 for weekends">Day of Week (0-6, 0=Sun)</label>
-                        <input type="text" id="dow" value="*" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        <select id="dow-preset" class="w-full mt-1 px-2 py-1 text-sm border rounded dark:bg-gray-700">
-                            <option value="*">Every day (*)</option>
-                            <option value="1-5">Weekdays (1-5)</option>
-                            <option value="0,6">Weekends (0,6)</option>
-                            <option value="1">Monday</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Natural Language Input -->
-                <div class="mt-6">
-                    <label class="block text-sm font-medium mb-1 cursor-help" title="Describe your schedule in plain language (Dutch or English)">Natural Language</label>
-                    <input type="text" id="natural-input" placeholder="every weekday at 9:00" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600" title="Example: 'every weekday at 9:00' or 'elke werkdag om 9:00'">
-                    <button id="parse-natural" class="w-full mt-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" title="Convert natural language to cron expression">Parse</button>
-                </div>
-
-                <!-- Timezone Selector -->
-                <div class="mt-4">
-                    <label class="block text-sm font-medium mb-1 cursor-help" title="Select timezone for displaying scheduled run times">Timezone</label>
-                    <select id="timezone" class="w-full px-2 py-1 border rounded dark:bg-gray-700">
-                        <option value="UTC">UTC</option>
-                        <option value="Europe/Amsterdam" selected>Europe/Amsterdam</option>
-                        <option value="America/New_York">America/New_York</option>
-                        <option value="America/Los_Angeles">America/Los_Angeles</option>
-                        <option value="Asia/Tokyo">Asia/Tokyo</option>
+                <div class="flex items-center gap-2">
+                    <label for="language-select" id="language-label" class="text-sm font-medium">Language</label>
+                    <select id="language-select" class="px-2 py-2 text-sm border border-slate-300 rounded-lg bg-white">
+                        <option value="en" selected>English</option>
+                        <option value="nl">Nederlands</option>
                     </select>
                 </div>
+                <div class="flex items-center gap-2">
+                    <a href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors w-fit">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.868-.013-1.703-2.782.603-3.369-1.343-3.369-1.343-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.544 2.914 1.19.092-.926.35-1.557.636-1.914-2.22-.253-4.555-1.112-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0110 4.817c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.137 18.194 20 14.44 20 10.017 20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        GitHub
+                    </a>
+                    <a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors w-fit">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M12 3a15.3 15.3 0 0 1 4 9 15.3 15.3 0 0 1-4 9 15.3 15.3 0 0 1-4-9 15.3 15.3 0 0 1 4-9z"></path>
+                        </svg>
+                        jordibrw.nl
+                    </a>
+                </div>
             </div>
+        </header>
 
-            <!-- Right Panel -->
-            <div class="lg:col-span-4 space-y-4">
-                <!-- Validation & Description -->
-                <div id="validation" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                    <div class="flex items-start justify-between gap-4">
+        <section class="card rounded-xl p-4 lg:p-5 mb-5 fade-in">
+            <div class="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+                <div>
+                    <h2 id="how-title" class="font-bold text-lg">How the app works</h2>
+                    <p id="how-subtitle" class="text-slate-600 text-sm">1) Choose a schedule, 2) validate the planning, 3) choose your runtime and copy the code.</p>
+                </div>
+                <div class="flex flex-wrap gap-2" id="stepper">
+                    <button class="step-pill active px-3 py-2 rounded-lg text-sm font-semibold" data-step="1">1. Choose schedule</button>
+                    <button class="step-pill px-3 py-2 rounded-lg text-sm font-semibold" data-step="2">2. Validate planning</button>
+                    <button class="step-pill px-3 py-2 rounded-lg text-sm font-semibold" data-step="3">3. Generate code</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-5">
+            <aside class="lg:col-span-2 space-y-4">
+                <div class="card rounded-xl p-5 fade-in">
+                    <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h3 class="text-lg font-bold mb-2 cursor-help" title="Your generated cron schedule expression">Cron Expression</h3>
-                            <div class="flex items-center gap-2">
-                                <code id="cron-expr" class="text-2xl font-mono bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded cursor-help" title="Format: minute hour day month day-of-week">* * * * *</code>
-                                <button id="copy-cron" class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-help text-sm font-medium" title="Copy cron expression to clipboard">Copy</button>
+                            <h3 id="step1-title" class="font-bold text-lg">Step 1: Choose your schedule</h3>
+                            <p id="step1-subtitle" class="text-sm text-slate-600">Start with plain language or configure each cron field manually.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p id="mode-label" class="text-sm font-medium mb-2">Mode</p>
+                        <div class="inline-flex rounded-lg bg-slate-100 p-1" role="radiogroup" aria-label="Choose mode">
+                            <button id="mode-beginner" class="mode-btn px-3 py-2 rounded-md text-sm font-semibold bg-white shadow" data-mode="beginner">Beginner</button>
+                            <button id="mode-advanced" class="mode-btn px-3 py-2 rounded-md text-sm font-semibold text-slate-600" data-mode="advanced">Advanced</button>
+                        </div>
+                    </div>
+
+                    <div id="beginner-block" class="mt-4 space-y-4">
+                        <div>
+                            <label id="natural-label" class="block text-sm font-medium mb-1">Describe when it should run</label>
+                            <input type="text" id="natural-input" placeholder="e.g. every weekday at 09:00" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                            <button id="parse-natural" class="w-full mt-2 px-3 py-2 rounded-lg bg-sky-700 text-white hover:bg-sky-800">Convert schedule</button>
+                        </div>
+                        <div>
+                            <p id="quick-title" class="text-sm font-medium mb-2">Quick examples</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button id="quick-chip-1" class="quick-chip px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-sm" data-cron="0 9 * * 1-5">Every weekday at 09:00</button>
+                                <button id="quick-chip-2" class="quick-chip px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-sm" data-cron="0 2 * * *">Every night at 02:00</button>
+                                <button id="quick-chip-3" class="quick-chip px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-sm" data-cron="*/15 * * * *">Every 15 minutes</button>
                             </div>
                         </div>
-                        
-                    </div>
-                    <p id="human-text" class="mt-4 text-lg text-gray-700 dark:text-gray-300">Every minute</p>
-                    <p id="error-text" class="mt-2 text-sm text-red-600 hidden"></p>
-                </div>
-
-                <!-- Next Runs -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-3 cursor-help" title="The next 50 times your cron job will execute">Next 50 Scheduled Runs</h3>
-                    <div id="next-runs" class="max-h-64 overflow-y-auto text-sm space-y-1"></div>
-                </div>
-
-                <!-- Heatmap Calendar -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-3 cursor-help" title="Visual representation of job execution frequency over 365 days (green=less frequent, red=more frequent)">Run Frequency Heatmap (365 days)</h3>
-                    <canvas id="canvas-heatmap" width="800" height="120" class="w-full"></canvas>
-                </div>
-
-                <!-- Code Generator Tabs -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-3 cursor-help" title="Generate ready-to-use code for your chosen programming language or deployment platform">Code Generator</h3>
-                    
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <button data-tab="bash" class="tab-btn px-4 py-2 rounded tab-active cursor-help" title="Generate crontab command for Unix/Linux systems">Bash</button>
-                        <button data-tab="nodejs" class="tab-btn px-4 py-2 rounded tab-inactive cursor-help" title="Generate Node.js code using node-cron library">Node.js</button>
-                        <button data-tab="python" class="tab-btn px-4 py-2 rounded tab-inactive cursor-help" title="Generate Python code using APScheduler">Python</button>
-                        <button data-tab="java" class="tab-btn px-4 py-2 rounded tab-inactive cursor-help" title="Generate Java code using Quartz framework">Java</button>
-                        <button data-tab="docker" class="tab-btn px-4 py-2 rounded tab-inactive cursor-help" title="Generate Docker Compose and Kubernetes CronJob configurations">Docker/K8s</button>
                     </div>
 
-                    <div class="relative">
-                        <pre id="code-output" class="bg-gray-100 dark:bg-gray-900 p-4 rounded overflow-x-auto text-sm"><code></code></pre>
-                        <button id="copy-code" class="absolute top-2 right-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm">Copy</button>
+                    <div id="advanced-block" class="mt-4 space-y-4 hidden">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Minute (0-59)</label>
+                                <input type="text" id="minute" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <select id="minute-preset" class="w-full mt-1 px-2 py-2 text-sm border border-slate-300 rounded-lg">
+                                    <option value="*">Every minute (*)</option>
+                                    <option value="0">At :00</option>
+                                    <option value="*/5">Every 5 min (*/5)</option>
+                                    <option value="*/15">Every 15 min (*/15)</option>
+                                    <option value="0,30">At :00 and :30</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Hour (0-23)</label>
+                                <input type="text" id="hour" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <select id="hour-preset" class="w-full mt-1 px-2 py-2 text-sm border border-slate-300 rounded-lg">
+                                    <option value="*">Every hour (*)</option>
+                                    <option value="0">Midnight (0)</option>
+                                    <option value="9">09:00</option>
+                                    <option value="*/2">Every 2 hours (*/2)</option>
+                                    <option value="9-17">Office hours (9-17)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Day of month (1-31)</label>
+                                <input type="text" id="dom" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <select id="dom-preset" class="w-full mt-1 px-2 py-2 text-sm border border-slate-300 rounded-lg">
+                                    <option value="*">Every day (*)</option>
+                                    <option value="1">First day (1)</option>
+                                    <option value="15">Mid-month (15)</option>
+                                    <option value="1,15">1st and 15th</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Month (1-12)</label>
+                                <input type="text" id="month" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <select id="month-preset" class="w-full mt-1 px-2 py-2 text-sm border border-slate-300 rounded-lg">
+                                    <option value="*">Every month (*)</option>
+                                    <option value="1">January (1)</option>
+                                    <option value="6-8">Summer (6-8)</option>
+                                    <option value="12">December (12)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Day of week (0-6, 0=Sun)</label>
+                            <input type="text" id="dow" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                            <select id="dow-preset" class="w-full mt-1 px-2 py-2 text-sm border border-slate-300 rounded-lg">
+                                <option value="*">Every day (*)</option>
+                                <option value="1-5">Weekdays (1-5)</option>
+                                <option value="0,6">Weekend (0,6)</option>
+                                <option value="1">Monday only</option>
+                            </select>
+                        </div>
+                        <p class="text-xs text-slate-500">Tip: use * for all values, commas for lists, hyphens for ranges, and / for intervals.</p>
                     </div>
 
-                    <div class="flex gap-2 mt-4">
-                        <button id="download-code" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-help" title="Download the generated code as a file">Download</button>
-                        <button id="test-run" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 cursor-help" title="Test the cron expression and show next 10 runs in console">Test Run (Console)</button>
-                        <button id="save-favorite" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 cursor-help" title="Save this cron configuration to your browser's local storage for later use">Save Favorite</button>
+                    <div class="mt-4">
+                        <label id="timezone-label" class="block text-sm font-medium mb-1">Timezone</label>
+                        <select id="timezone" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                            <option value="UTC">UTC</option>
+                            <option value="Europe/Amsterdam" selected>Europe/Amsterdam</option>
+                            <option value="America/New_York">America/New_York</option>
+                            <option value="America/Los_Angeles">America/Los_Angeles</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo</option>
+                        </select>
+                    </div>
+
+                    <button id="to-step-2" class="w-full mt-5 px-4 py-3 rounded-lg bg-sky-700 text-white font-semibold hover:bg-sky-800">Next: validate planning</button>
+                </div>
+
+                <div class="card rounded-xl p-5 fade-in">
+                    <h3 id="quick-presets-title" class="font-bold text-lg mb-3">50+ quick presets</h3>
+                    <div id="presets-grid" class="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto"></div>
+                </div>
+            </aside>
+
+            <main class="lg:col-span-3 space-y-4">
+                <div class="card rounded-xl p-5 lg:sticky lg:top-4 fade-in">
+                    <h3 id="live-title" class="font-bold text-lg">Live summary</h3>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <code id="cron-expr" class="text-lg font-mono bg-slate-100 px-3 py-2 rounded-lg">* * * * *</code>
+                        <button id="copy-cron" class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm">Copy cron</button>
+                    </div>
+
+                    <div id="cron-map" class="flex flex-wrap gap-2 mt-3 text-sm">
+                        <span class="map-chip px-2 py-1 rounded" id="map-minute" title="Minute (0-59)">minute</span>
+                        <span class="map-chip px-2 py-1 rounded" id="map-hour" title="Hour (0-23)">hour</span>
+                        <span class="map-chip px-2 py-1 rounded" id="map-dom" title="Day of month (1-31)">day</span>
+                        <span class="map-chip px-2 py-1 rounded" id="map-month" title="Month (1-12)">month</span>
+                        <span class="map-chip px-2 py-1 rounded" id="map-dow" title="Day of week (0-6)">weekday</span>
+                    </div>
+                    <p id="dom-dow-tip" class="text-xs text-slate-500 mt-2">Note: day-of-month and day-of-week are separate filters. Combine carefully to avoid unexpected schedules.</p>
+
+                    <p id="human-text" class="mt-3 text-slate-700">Every minute</p>
+                    <p id="error-text" class="mt-2 text-sm text-red-700 hidden"></p>
+
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                        <div class="rounded-lg bg-slate-100 px-3 py-2">
+                            <p id="status-label" class="text-slate-500">Status</p>
+                            <p id="status-valid" class="font-semibold">Valid</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-100 px-3 py-2">
+                            <p id="tz-status-label" class="text-slate-500">Timezone</p>
+                            <p id="status-tz" class="font-semibold">Europe/Amsterdam</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-100 px-3 py-2">
+                            <p id="next-run-label" class="text-slate-500">Next run</p>
+                            <p id="status-next" class="font-semibold">-</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Presets Library -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-bold mb-3 cursor-help" title="Click any preset to instantly populate your cron fields with that schedule">50+ Quick Presets</h3>
-                    <div id="presets-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-64 overflow-y-auto"></div>
-                </div>
-            </div>
-        </div>
+                <section id="step-2-panel" class="card rounded-xl p-5 fade-in">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <h3 id="step2-title" class="font-bold text-lg">Step 2: Validate planning</h3>
+                            <p id="step2-subtitle" class="text-sm text-slate-600">Review the upcoming run moments before generating code.</p>
+                        </div>
+                        <button id="toggle-runs" class="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-sm">Show 50 runs</button>
+                    </div>
+                    <div id="next-runs" class="mt-4 max-h-72 overflow-y-auto space-y-2"></div>
+                    <button id="to-step-3" class="w-full mt-5 px-4 py-3 rounded-lg bg-sky-700 text-white font-semibold hover:bg-sky-800">Next: generate code</button>
+                </section>
+
+                <section id="step-3-panel" class="card rounded-xl p-5 hidden fade-in">
+                    <h3 id="step3-title" class="font-bold text-lg">Step 3: Generate code</h3>
+                    <p id="step3-subtitle" class="text-sm text-slate-600 mt-1">Choose where this schedule runs, then copy your snippet.</p>
+
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label id="platform-label" class="block text-sm font-medium mb-1">Where will this run?</label>
+                            <select id="platform-select" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <option value="bash">Linux crontab (Bash)</option>
+                                <option value="nodejs">Node.js</option>
+                                <option value="python">Python</option>
+                                <option class="advanced-platform hidden" value="java">Java (Quartz)</option>
+                                <option class="advanced-platform hidden" value="docker">Docker / Kubernetes</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="show-platforms" class="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-sm">Show all platforms</button>
+                        </div>
+                    </div>
+
+                    <div class="relative mt-4">
+                        <pre id="code-output" class="bg-slate-950 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm"><code></code></pre>
+                        <button id="copy-code" class="absolute top-2 right-2 px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm">Copy code</button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <button id="download-code" class="px-4 py-2 bg-sky-700 text-white rounded-lg hover:bg-sky-800">Download</button>
+                        <button id="test-run" class="px-4 py-2 bg-violet-700 text-white rounded-lg hover:bg-violet-800">Test in console</button>
+                        <button id="save-favorite" class="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400">Save favorite</button>
+                    </div>
+                </section>
+
+                <section id="advanced-panels" class="space-y-4 fade-in">
+                    <div class="card rounded-xl p-5">
+                        <h3 id="heatmap-title" class="font-bold text-lg">Frequency map (365 days)</h3>
+                        <p id="heatmap-subtitle" class="text-sm text-slate-600 mb-3">Green = fewer runs, red = more runs on that day.</p>
+                        <canvas id="canvas-heatmap" width="860" height="120" class="w-full"></canvas>
+                    </div>
+                </section>
+            </main>
+        </section>
     </div>
 
     <script>
-        // State
-        let currentTab = 'bash';
-        let currentTimezone = 'Europe/Amsterdam';
-        
-        // DOM Elements
+        let currentPlatform = 'bash';
+        let currentStep = 1;
+        let showAllRuns = false;
+        let allPlatformsShown = false;
+        let currentMode = 'beginner';
+        let currentLanguage = 'en';
+
+        const i18n = {
+            en: {
+                appTitle: 'Cron Planner',
+                pageTitle: 'Cron Planner - Cron Job Generator & Cron Expression Builder',
+                heroSubtitle: 'Build your schedule in 3 clear steps, validate it instantly, then generate code.',
+                heroSummary: 'Use this free cron job generator to build crontab expressions, preview schedule runs, and generate production-ready snippets for Bash, Node.js, Python, Java, Docker, and Kubernetes.',
+                languageLabel: 'Language',
+                howTitle: 'How the app works',
+                howSubtitle: '1) Choose a schedule, 2) validate the planning, 3) choose your runtime and copy the code.',
+                step1: '1. Choose schedule',
+                step2: '2. Validate planning',
+                step3: '3. Generate code',
+                step1Title: 'Step 1: Choose your schedule',
+                step1Subtitle: 'Start with plain language or configure each cron field manually.',
+                modeLabel: 'Mode',
+                modeBeginner: 'Beginner',
+                modeAdvanced: 'Advanced',
+                naturalLabel: 'Describe when it should run',
+                naturalPlaceholder: 'e.g. every weekday at 09:00',
+                parseNatural: 'Convert schedule',
+                quickTitle: 'Quick examples',
+                quickPresetsTitle: '50+ quick presets',
+                quick1: 'Every weekday at 09:00',
+                quick2: 'Every night at 02:00',
+                quick3: 'Every 15 minutes',
+                timezoneLabel: 'Timezone',
+                toStep2: 'Next: validate planning',
+                liveTitle: 'Live summary',
+                copyCron: 'Copy cron',
+                domDowTip: 'Note: day-of-month and day-of-week are separate filters. Combine carefully to avoid unexpected schedules.',
+                mapMinute: 'minute',
+                mapHour: 'hour',
+                mapDay: 'day',
+                mapMonth: 'month',
+                mapWeekday: 'weekday',
+                statusLabel: 'Status',
+                tzStatusLabel: 'Timezone',
+                nextRunLabel: 'Next run',
+                statusValid: 'Valid',
+                statusInvalid: 'Invalid',
+                step2Title: 'Step 2: Validate planning',
+                step2Subtitle: 'Review the upcoming run moments before generating code.',
+                show50: 'Show 50 runs',
+                show3: 'Show first 3 only',
+                toStep3: 'Next: generate code',
+                step3Title: 'Step 3: Generate code',
+                step3Subtitle: 'Choose where this schedule runs, then copy your snippet.',
+                platformLabel: 'Where will this run?',
+                showPlatforms: 'Show all platforms',
+                hidePlatforms: 'Hide extra platforms',
+                copyCode: 'Copy code',
+                testConsole: 'Test in console',
+                saveFavorite: 'Save favorite',
+                heatmapTitle: 'Frequency map (365 days)',
+                heatmapSubtitle: 'Green = fewer runs, red = more runs on that day.',
+                validationEmpty: '{label} contains an empty value. Use for example {min}-{max} or *.',
+                validationInterval: '{label} interval is invalid. Use for example */5.',
+                validationRange: '{label} must be between {min} and {max}.',
+                validationReversed: '{label} range is reversed. Use for example 1-5.',
+                invalidSchedule: 'Invalid schedule',
+                cannotCalculate: 'Could not calculate schedule: {error}',
+                now: 'now',
+                inDaysHours: 'in {days}d {hours}h',
+                inHoursMinutes: 'in {hours}h {minutes}m',
+                inMinutes: 'in {minutes}m',
+                exampleLoaded: 'Example loaded. Validate your planning now.',
+                fixErrorsBeforeCode: 'Fix your schedule errors before generating code.',
+                step3ValidOnly: 'Step 3 is only available with a valid schedule.',
+                textConverted: 'Text converted to cron. Validate your planning now.',
+                cronCopied: 'Cron expression copied.',
+                codeCopied: 'Code copied.',
+                downloaded: 'Code file downloaded.',
+                consoleLogged: 'Test result is in the browser console (F12).',
+                cannotSaveInvalid: 'Cannot save: schedule is invalid.',
+                favoritePrompt: 'Name for favorite schedule:',
+                unnamed: 'Unnamed schedule',
+                favoriteSaved: 'Favorite saved.',
+                presetLoaded: 'Preset loaded: {name}',
+                minuteLabel: 'Minute',
+                hourLabel: 'Hour',
+                domLabel: 'Day of month',
+                monthLabel: 'Month',
+                dowLabel: 'Day of week',
+                everyMinute: 'Every minute',
+                everyXMinutes: 'every {value} minutes',
+                atMinute: 'at minute {value}',
+                everyXHours: 'every {value} hours',
+                atTime: 'at {value}:00',
+                inHours: 'in hours {value}',
+                onDayOfMonth: 'on day {value} of the month',
+                inMonth: 'in {value}',
+                inMonthNumber: 'in month {value}',
+                onWeekdays: 'on weekdays',
+                onWeekends: 'on weekends',
+                onDay: 'on {value}',
+                onWeekday: 'on weekday {value}'
+            },
+            nl: {
+                appTitle: 'Cronplanner',
+                pageTitle: 'Cronplanner - Cronjob generator en cron-expressie bouwer',
+                heroSubtitle: 'Bouw je planning in 3 duidelijke stappen, controleer meteen en genereer daarna direct code.',
+                heroSummary: 'Gebruik deze gratis cronjob generator om crontab-expressies te bouwen, geplande momenten te bekijken en productieklare snippets te genereren voor Bash, Node.js, Python, Java, Docker en Kubernetes.',
+                languageLabel: 'Taal',
+                howTitle: 'Zo werkt de app',
+                howSubtitle: '1) Kies een schema, 2) controleer of de planning klopt, 3) kies waar je het draait en kopieer je code.',
+                step1: '1. Kies schema',
+                step2: '2. Controleer planning',
+                step3: '3. Genereer code',
+                step1Title: 'Stap 1: Kies je schema',
+                step1Subtitle: 'Start eenvoudig met tekst of ga handmatig per cron-veld.',
+                modeLabel: 'Modus',
+                modeBeginner: 'Beginner',
+                modeAdvanced: 'Gevorderd',
+                naturalLabel: 'Leg uit wanneer het moet draaien',
+                naturalPlaceholder: 'bijv. elke werkdag om 09:00',
+                parseNatural: 'Schema omzetten',
+                quickTitle: 'Snelle voorbeelden',
+                quickPresetsTitle: '50+ snelle presets',
+                quick1: 'Elke werkdag om 09:00',
+                quick2: 'Elke nacht om 02:00',
+                quick3: 'Elke 15 minuten',
+                timezoneLabel: 'Tijdzone',
+                toStep2: 'Volgende: controleer planning',
+                liveTitle: 'Live samenvatting',
+                copyCron: 'Kopieer cron',
+                domDowTip: 'Let op: dag van maand en weekdag zijn aparte filters. Combineer bewust om onverwachte planning te voorkomen.',
+                mapMinute: 'minuut',
+                mapHour: 'uur',
+                mapDay: 'dag',
+                mapMonth: 'maand',
+                mapWeekday: 'weekdag',
+                statusLabel: 'Status',
+                tzStatusLabel: 'Tijdzone',
+                nextRunLabel: 'Volgende run',
+                statusValid: 'Geldig',
+                statusInvalid: 'Niet geldig',
+                step2Title: 'Stap 2: Controleer planning',
+                step2Subtitle: 'Bekijk eerstvolgende runs voordat je code genereert.',
+                show50: 'Toon 50 runs',
+                show3: 'Toon alleen eerste 3',
+                toStep3: 'Volgende: genereer code',
+                step3Title: 'Stap 3: Genereer code',
+                step3Subtitle: 'Kies eerst waar je schema draait, kopieer daarna je snippet.',
+                platformLabel: 'Waar wil je dit draaien?',
+                showPlatforms: 'Toon alle platforms',
+                hidePlatforms: 'Verberg extra platforms',
+                copyCode: 'Kopieer code',
+                testConsole: 'Test in console',
+                saveFavorite: 'Opslaan als favoriet',
+                heatmapTitle: 'Frequentiekaart (365 dagen)',
+                heatmapSubtitle: 'Groen = weinig runs, rood = veel runs op die dag.',
+                validationEmpty: '{label} bevat een lege waarde. Gebruik bijvoorbeeld {min}-{max} of *.',
+                validationInterval: '{label} interval is ongeldig. Gebruik bijvoorbeeld */5.',
+                validationRange: '{label} moet tussen {min} en {max} liggen.',
+                validationReversed: '{label} bereik is omgekeerd. Gebruik bijvoorbeeld 1-5.',
+                invalidSchedule: 'Ongeldige planning',
+                cannotCalculate: 'Kon planning niet berekenen: {error}',
+                now: 'nu',
+                inDaysHours: 'over {days}d {hours}u',
+                inHoursMinutes: 'over {hours}u {minutes}m',
+                inMinutes: 'over {minutes}m',
+                exampleLoaded: 'Voorbeeld geladen. Controleer direct je planning.',
+                fixErrorsBeforeCode: 'Los eerst de fout in je planning op voordat je code genereert.',
+                step3ValidOnly: 'Stap 3 is pas beschikbaar met een geldige planning.',
+                textConverted: 'Tekst omgezet naar cron. Controleer nu de planning.',
+                cronCopied: 'Cron-expressie gekopieerd.',
+                codeCopied: 'Code gekopieerd.',
+                downloaded: 'Codebestand gedownload.',
+                consoleLogged: 'Testresultaat staat in de browserconsole (F12).',
+                cannotSaveInvalid: 'Kan niet opslaan: planning is niet geldig.',
+                favoritePrompt: 'Naam voor favoriet schema:',
+                unnamed: 'Onbenoemd schema',
+                favoriteSaved: 'Favoriet opgeslagen.',
+                presetLoaded: 'Preset geladen: {name}',
+                minuteLabel: 'Minuut',
+                hourLabel: 'Uur',
+                domLabel: 'Dag van maand',
+                monthLabel: 'Maand',
+                dowLabel: 'Dag van week',
+                everyMinute: 'Elke minuut',
+                everyXMinutes: 'elke {value} minuten',
+                atMinute: 'op minuut {value}',
+                everyXHours: 'elke {value} uur',
+                atTime: 'om {value}:00',
+                inHours: 'in uren {value}',
+                onDayOfMonth: 'op dag {value} van de maand',
+                inMonth: 'in {value}',
+                inMonthNumber: 'in maand {value}',
+                onWeekdays: 'op werkdagen',
+                onWeekends: 'in het weekend',
+                onDay: 'op {value}',
+                onWeekday: 'op weekdag {value}'
+            }
+        };
+
+        function t(key, vars = {}) {
+            const dict = i18n[currentLanguage] || i18n.en;
+            let value = dict[key] || i18n.en[key] || key;
+            Object.keys(vars).forEach(name => {
+                value = value.replaceAll(`{${name}}`, vars[name]);
+            });
+            return value;
+        }
+
         const fields = {
             minute: document.getElementById('minute'),
             hour: document.getElementById('hour'),
@@ -205,7 +538,6 @@
             dow: document.getElementById('dow')
         };
 
-        // Preset definitions
         const presets = [
             { name: 'Every Minute', cron: '* * * * *', desc: 'Runs every minute' },
             { name: 'Every 5 Minutes', cron: '*/5 * * * *', desc: 'Every 5 minutes' },
@@ -261,312 +593,447 @@
             { name: 'Security Scan', cron: '0 2 * * 1', desc: 'Mondays at 2 AM' }
         ];
 
-        // Cron Parser
-        function parseCron(minute, hour, dom, month, dow) {
-            try {
-                const parts = [minute, hour, dom, month, dow];
-                
-                // Basic validation
-                for (let part of parts) {
-                    if (!part || part.trim() === '') {
-                        return { valid: false, error: 'Empty field not allowed', humanText: '', nextRuns: [] };
-                    }
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2200);
+        }
+
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.*+?^${}()|[\]\\])/g, '\\$1') + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function setCookie(name, value, days) {
+            const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+            document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+        }
+
+        function applyMode(mode, persist = false) {
+            currentMode = mode === 'advanced' ? 'advanced' : 'beginner';
+            if (persist) {
+                setCookie('cronPlannerMode', currentMode, 365);
+            }
+
+            const isAdvanced = currentMode === 'advanced';
+            document.getElementById('beginner-block').classList.toggle('hidden', isAdvanced);
+            document.getElementById('advanced-block').classList.toggle('hidden', !isAdvanced);
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                const btnMode = btn.dataset.mode;
+                const active = btnMode === currentMode;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow', active);
+                btn.classList.toggle('text-slate-600', !active);
+            });
+        }
+
+        function updateSeoMeta() {
+            document.querySelector('meta[name="description"]').setAttribute('content', t('heroSummary'));
+            document.querySelector('meta[property="og:title"]').setAttribute('content', t('pageTitle'));
+            document.querySelector('meta[property="og:description"]').setAttribute('content', t('heroSummary'));
+            document.querySelector('meta[name="twitter:title"]').setAttribute('content', t('pageTitle'));
+            document.querySelector('meta[name="twitter:description"]').setAttribute('content', t('heroSummary'));
+        }
+
+        function applyLanguage() {
+            document.documentElement.lang = currentLanguage;
+            document.title = t('pageTitle');
+            updateSeoMeta();
+            document.getElementById('app-title').textContent = t('appTitle');
+            document.getElementById('hero-subtitle').textContent = t('heroSubtitle');
+            document.getElementById('hero-summary').textContent = t('heroSummary');
+            document.getElementById('language-label').textContent = t('languageLabel');
+            document.getElementById('how-title').textContent = t('howTitle');
+            document.getElementById('how-subtitle').textContent = t('howSubtitle');
+            document.querySelector('#stepper [data-step="1"]').textContent = t('step1');
+            document.querySelector('#stepper [data-step="2"]').textContent = t('step2');
+            document.querySelector('#stepper [data-step="3"]').textContent = t('step3');
+            document.getElementById('step1-title').textContent = t('step1Title');
+            document.getElementById('step1-subtitle').textContent = t('step1Subtitle');
+            document.getElementById('mode-label').textContent = t('modeLabel');
+            document.getElementById('mode-beginner').textContent = t('modeBeginner');
+            document.getElementById('mode-advanced').textContent = t('modeAdvanced');
+            document.getElementById('natural-label').textContent = t('naturalLabel');
+            document.getElementById('natural-input').placeholder = t('naturalPlaceholder');
+            document.getElementById('parse-natural').textContent = t('parseNatural');
+            document.getElementById('quick-title').textContent = t('quickTitle');
+            document.getElementById('quick-presets-title').textContent = t('quickPresetsTitle');
+            document.getElementById('quick-chip-1').textContent = t('quick1');
+            document.getElementById('quick-chip-2').textContent = t('quick2');
+            document.getElementById('quick-chip-3').textContent = t('quick3');
+            document.getElementById('timezone-label').textContent = t('timezoneLabel');
+            document.getElementById('to-step-2').textContent = t('toStep2');
+            document.getElementById('live-title').textContent = t('liveTitle');
+            document.getElementById('copy-cron').textContent = t('copyCron');
+            document.getElementById('map-minute').textContent = t('mapMinute');
+            document.getElementById('map-hour').textContent = t('mapHour');
+            document.getElementById('map-dom').textContent = t('mapDay');
+            document.getElementById('map-month').textContent = t('mapMonth');
+            document.getElementById('map-dow').textContent = t('mapWeekday');
+            document.getElementById('dom-dow-tip').textContent = t('domDowTip');
+            document.getElementById('status-label').textContent = t('statusLabel');
+            document.getElementById('tz-status-label').textContent = t('tzStatusLabel');
+            document.getElementById('next-run-label').textContent = t('nextRunLabel');
+            document.getElementById('step2-title').textContent = t('step2Title');
+            document.getElementById('step2-subtitle').textContent = t('step2Subtitle');
+            document.getElementById('toggle-runs').textContent = showAllRuns ? t('show3') : t('show50');
+            document.getElementById('to-step-3').textContent = t('toStep3');
+            document.getElementById('step3-title').textContent = t('step3Title');
+            document.getElementById('step3-subtitle').textContent = t('step3Subtitle');
+            document.getElementById('platform-label').textContent = t('platformLabel');
+            document.getElementById('show-platforms').textContent = allPlatformsShown ? t('hidePlatforms') : t('showPlatforms');
+            document.getElementById('copy-code').textContent = t('copyCode');
+            document.getElementById('test-run').textContent = t('testConsole');
+            document.getElementById('save-favorite').textContent = t('saveFavorite');
+            document.getElementById('heatmap-title').textContent = t('heatmapTitle');
+            document.getElementById('heatmap-subtitle').textContent = t('heatmapSubtitle');
+            document.getElementById('mode-label').textContent = t('modeLabel');
+            document.getElementById('mode-beginner').textContent = t('modeBeginner');
+            document.getElementById('mode-advanced').textContent = t('modeAdvanced');
+            applyMode(currentMode, false);
+            updateUI();
+        }
+
+        function fieldLabel(key) {
+            return t(`${key}Label`);
+        }
+
+        function setStep(step) {
+            currentStep = step;
+            document.querySelectorAll('#stepper .step-pill').forEach(btn => {
+                const stepValue = parseInt(btn.dataset.step, 10);
+                btn.classList.remove('active', 'done');
+                if (stepValue < currentStep) btn.classList.add('done');
+                if (stepValue === currentStep) btn.classList.add('active');
+            });
+
+            const step3Panel = document.getElementById('step-3-panel');
+            if (currentStep >= 3) {
+                step3Panel.classList.remove('hidden');
+            } else {
+                step3Panel.classList.add('hidden');
+            }
+        }
+
+        function setCron(cronStr) {
+            const parts = cronStr.trim().split(' ');
+            if (parts.length !== 5) return;
+            fields.minute.value = parts[0];
+            fields.hour.value = parts[1];
+            fields.dom.value = parts[2];
+            fields.month.value = parts[3];
+            fields.dow.value = parts[4];
+            updateUI();
+        }
+
+        function validateToken(token, min, max) {
+            if (!/^\d+$/.test(token)) return false;
+            const n = parseInt(token, 10);
+            return n >= min && n <= max;
+        }
+
+        function validateCronField(field, min, max, label) {
+            const trimmed = field.trim();
+            if (trimmed === '*') return { valid: true };
+
+            const parts = trimmed.split(',');
+            for (const part of parts) {
+                const token = part.trim();
+                if (!token) {
+                    return { valid: false, error: t('validationEmpty', { label, min: String(min), max: String(max) }) };
                 }
 
-                const cronStr = parts.join(' ');
+                if (token.startsWith('*/')) {
+                    const step = token.slice(2);
+                    if (!/^\d+$/.test(step) || parseInt(step, 10) <= 0) {
+                        return { valid: false, error: t('validationInterval', { label }) };
+                    }
+                    continue;
+                }
+
+                if (token.includes('-')) {
+                    const [start, end] = token.split('-');
+                    if (!validateToken(start, min, max) || !validateToken(end, min, max)) {
+                        return { valid: false, error: t('validationRange', { label, min: String(min), max: String(max) }) };
+                    }
+                    if (parseInt(start, 10) > parseInt(end, 10)) {
+                        return { valid: false, error: t('validationReversed', { label }) };
+                    }
+                    continue;
+                }
+
+                if (!validateToken(token, min, max)) {
+                    return { valid: false, error: t('validationRange', { label, min: String(min), max: String(max) }) };
+                }
+            }
+
+            return { valid: true };
+        }
+
+        function parseCron(minute, hour, dom, month, dow) {
+            const fieldChecks = [
+                validateCronField(minute, 0, 59, fieldLabel('minute')),
+                validateCronField(hour, 0, 23, fieldLabel('hour')),
+                validateCronField(dom, 1, 31, fieldLabel('dom')),
+                validateCronField(month, 1, 12, fieldLabel('month')),
+                validateCronField(dow, 0, 6, fieldLabel('dow'))
+            ];
+
+            const firstError = fieldChecks.find(check => !check.valid);
+            if (firstError) {
+                return { valid: false, error: firstError.error, humanText: t('invalidSchedule'), nextRuns: [], cronStr: `${minute} ${hour} ${dom} ${month} ${dow}` };
+            }
+
+            try {
+                const cronStr = `${minute} ${hour} ${dom} ${month} ${dow}`;
                 const humanText = generateHumanText(minute, hour, dom, month, dow);
                 const nextRuns = calculateNextRuns(minute, hour, dom, month, dow, 50);
-                
                 return { valid: true, error: '', humanText, nextRuns, cronStr };
-            } catch (e) {
-                return { valid: false, error: e.message, humanText: '', nextRuns: [] };
+            } catch (error) {
+                return { valid: false, error: t('cannotCalculate', { error: error.message }), humanText: t('invalidSchedule'), nextRuns: [], cronStr: `${minute} ${hour} ${dom} ${month} ${dow}` };
             }
         }
 
         function generateHumanText(minute, hour, dom, month, dow) {
-            let parts = [];
-            
-            // Minutes
-            if (minute === '*') parts.push('every minute');
-            else if (minute.startsWith('*/')) parts.push(`every ${minute.slice(2)} minutes`);
-            else if (minute.includes(',')) parts.push(`at minutes ${minute}`);
-            else if (minute.includes('-')) parts.push(`at minutes ${minute}`);
-            else parts.push(`at minute ${minute}`);
-            
-            // Hours
+            const parts = [];
+            const monthsNl = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+            const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const daysNl = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+            const daysEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            if (minute === '*') parts.push(t('everyMinute'));
+            else if (minute.startsWith('*/')) parts.push(t('everyXMinutes', { value: minute.slice(2) }));
+            else parts.push(t('atMinute', { value: minute }));
+
             if (hour !== '*') {
-                if (hour.startsWith('*/')) parts.push(`every ${hour.slice(2)} hours`);
-                else if (hour.includes(',')) parts.push(`at hours ${hour}`);
-                else if (hour.includes('-')) parts.push(`between hours ${hour}`);
-                else parts.push(`at ${hour}:00`);
+                if (hour.startsWith('*/')) parts.push(t('everyXHours', { value: hour.slice(2) }));
+                else if (/^\d+$/.test(hour)) parts.push(t('atTime', { value: hour.padStart(2, '0') }));
+                else parts.push(t('inHours', { value: hour }));
             }
-            
-            // Day of month
-            if (dom !== '*') {
-                if (dom.includes(',')) parts.push(`on days ${dom} of month`);
-                else parts.push(`on day ${dom} of month`);
-            }
-            
-            // Month
+
+            if (dom !== '*') parts.push(t('onDayOfMonth', { value: dom }));
+
             if (month !== '*') {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                if (month.includes(',')) {
-                    const m = month.split(',').map(n => months[parseInt(n)-1]).join(', ');
-                    parts.push(`in ${m}`);
-                } else if (month.includes('-')) {
-                    const [start, end] = month.split('-').map(n => months[parseInt(n)-1]);
-                    parts.push(`from ${start} to ${end}`);
+                if (/^\d+$/.test(month)) {
+                    const monthName = currentLanguage === 'nl' ? monthsNl[parseInt(month, 10) - 1] : monthsEn[parseInt(month, 10) - 1];
+                    parts.push(t('inMonth', { value: monthName }));
                 } else {
-                    parts.push(`in ${months[parseInt(month)-1]}`);
+                    parts.push(t('inMonthNumber', { value: month }));
                 }
             }
-            
-            // Day of week
+
             if (dow !== '*') {
-                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                if (dow === '1-5') parts.push('on weekdays');
-                else if (dow === '0,6') parts.push('on weekends');
-                else if (dow.includes(',')) {
-                    const d = dow.split(',').map(n => days[parseInt(n)]).join(', ');
-                    parts.push(`on ${d}`);
-                } else if (dow.includes('-')) {
-                    const [start, end] = dow.split('-').map(n => days[parseInt(n)]);
-                    parts.push(`from ${start} to ${end}`);
+                if (dow === '1-5') parts.push(t('onWeekdays'));
+                else if (dow === '0,6') parts.push(t('onWeekends'));
+                else if (/^\d+$/.test(dow)) {
+                    const dayName = currentLanguage === 'nl' ? daysNl[parseInt(dow, 10)] : daysEn[parseInt(dow, 10)];
+                    parts.push(t('onDay', { value: dayName }));
                 } else {
-                    parts.push(`on ${days[parseInt(dow)]}`);
+                    parts.push(t('onWeekday', { value: dow }));
                 }
             }
-            
-            return parts.join(', ').charAt(0).toUpperCase() + parts.join(', ').slice(1);
+
+            const text = parts.join(', ');
+            return text.charAt(0).toUpperCase() + text.slice(1);
         }
 
         function expandCronField(field, min, max) {
             const values = [];
-            
-            if (field === '*') {
+            const normalized = field.trim();
+
+            if (normalized === '*') {
                 for (let i = min; i <= max; i++) values.push(i);
                 return values;
             }
-            
-            if (field.startsWith('*/')) {
-                const step = parseInt(field.slice(2));
-                for (let i = min; i <= max; i += step) values.push(i);
-                return values;
+
+            const segments = normalized.split(',');
+            for (const segment of segments) {
+                if (segment.startsWith('*/')) {
+                    const step = parseInt(segment.slice(2), 10);
+                    for (let i = min; i <= max; i += step) values.push(i);
+                    continue;
+                }
+
+                if (segment.includes('-')) {
+                    const [start, end] = segment.split('-').map(v => parseInt(v.trim(), 10));
+                    for (let i = start; i <= end; i++) values.push(i);
+                    continue;
+                }
+
+                values.push(parseInt(segment, 10));
             }
-            
-            if (field.includes(',')) {
-                return field.split(',').map(v => parseInt(v.trim()));
-            }
-            
-            if (field.includes('-')) {
-                const [start, end] = field.split('-').map(v => parseInt(v.trim()));
-                for (let i = start; i <= end; i++) values.push(i);
-                return values;
-            }
-            
-            return [parseInt(field)];
+
+            return [...new Set(values)];
         }
 
         function calculateNextRuns(minute, hour, dom, month, dow, count) {
             const runs = [];
-            const now = new Date();
             const minutes = expandCronField(minute, 0, 59);
             const hours = expandCronField(hour, 0, 23);
             const doms = expandCronField(dom, 1, 31);
             const months = expandCronField(month, 1, 12);
             const dows = dow === '*' ? null : expandCronField(dow, 0, 6);
-            
-            let current = new Date(now);
+
+            let current = new Date();
             current.setSeconds(0, 0);
-            
-            while (runs.length < count) {
-                current = new Date(current.getTime() + 60000); // Add 1 minute
-                
+            let guard = 0;
+
+            while (runs.length < count && guard < 600000) {
+                guard += 1;
+                current = new Date(current.getTime() + 60000);
+
                 if (!minutes.includes(current.getMinutes())) continue;
                 if (!hours.includes(current.getHours())) continue;
                 if (!months.includes(current.getMonth() + 1)) continue;
                 if (!doms.includes(current.getDate())) continue;
                 if (dows && !dows.includes(current.getDay())) continue;
-                
+
                 runs.push(new Date(current));
             }
-            
+
             return runs;
         }
 
-        // Code Generators
-        function generateCode(cronStr, language) {
-            const templates = {
-                bash: `# Add to crontab: crontab -e
-${cronStr} /path/to/script.sh
+        function calculateTimeUntil(date) {
+            const diff = date.getTime() - Date.now();
+            if (diff <= 0) return t('now');
 
-# Or save to file and install:
-# crontab cron_jobs.txt`,
-                
-                nodejs: `// npm install node-cron
-const cron = require('node-cron');
+            const totalMinutes = Math.floor(diff / 60000);
+            const days = Math.floor(totalMinutes / (60 * 24));
+            const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+            const minutes = totalMinutes % 60;
 
-cron.schedule('${cronStr}', () => {
-    console.log('Running scheduled task at', new Date());
-    // Your code here
-});`,
-                
-                python: `# pip install apscheduler
-from apscheduler.schedulers.blocking import BlockingScheduler
-
-scheduler = BlockingScheduler()
-
-@scheduler.scheduled_job('cron', minute='${cronStr.split(' ')[0]}', hour='${cronStr.split(' ')[1]}',
-                         day='${cronStr.split(' ')[2]}', month='${cronStr.split(' ')[3]}',
-                         day_of_week='${cronStr.split(' ')[4]}')
-def scheduled_job():
-    print(f'Running task at {datetime.now()}')
-    # Your code here
-
-scheduler.start()`,
-                
-                java: `// Add Quartz dependency
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
-
-public class CronJob implements Job {
-    public void execute(JobExecutionContext context) {
-        System.out.println("Running at: " + new Date());
-        // Your code here
-    }
-    
-    public static void main(String[] args) throws Exception {
-        JobDetail job = JobBuilder.newJob(CronJob.class).build();
-        CronTrigger trigger = TriggerBuilder.newTrigger()
-            .withSchedule(CronScheduleBuilder.cronSchedule("0 ${cronStr}"))
-            .build();
-        Scheduler scheduler = new StdSchedulerFactory().getScheduler();
-        scheduler.scheduleJob(job, trigger);
-        scheduler.start();
-    }
-}`,
-                
-                docker: `# Docker Compose
-services:
-  cron-job:
-    image: your-image
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    environment:
-      - CRON_SCHEDULE=${cronStr}
-
-# Kubernetes CronJob
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: scheduled-job
-spec:
-  schedule: "${cronStr}"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: job
-            image: your-image
-          restartPolicy: OnFailure`
-            };
-            
-            return templates[language] || '';
+            if (days > 0) return t('inDaysHours', { days: String(days), hours: String(hours) });
+            if (hours > 0) return t('inHoursMinutes', { hours: String(hours), minutes: String(minutes) });
+            return t('inMinutes', { minutes: String(minutes) });
         }
 
-        // Natural Language Parser
+        function updateCodeOutput(cronStr) {
+            const code = generateCode(cronStr, currentPlatform);
+            document.querySelector('#code-output code').textContent = code;
+        }
+
+        function generateCode(cronStr, platform) {
+            const [minute, hour, dom, month, dow] = cronStr.split(' ');
+            const templates = {
+                bash: `# Add with crontab -e\n${cronStr} /path/to/script.sh`,
+                nodejs: `// npm install node-cron\nconst cron = require('node-cron');\n\ncron.schedule('${cronStr}', () => {\n  console.log('Scheduled task running at', new Date());\n  // your code\n});`,
+                python: `# pip install apscheduler\nfrom datetime import datetime\nfrom apscheduler.schedulers.blocking import BlockingScheduler\n\nscheduler = BlockingScheduler()\n\n@scheduler.scheduled_job('cron', minute='${minute}', hour='${hour}', day='${dom}', month='${month}', day_of_week='${dow}')\ndef job():\n    print('Scheduled task running at', datetime.now())\n\nscheduler.start()`,
+                java: `// Quartz example\nCronScheduleBuilder.cronSchedule("0 ${cronStr}");`,
+                docker: `apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: scheduled-job\nspec:\n  schedule: "${cronStr}"\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          containers:\n          - name: job\n            image: your-image\n          restartPolicy: OnFailure`
+            };
+            return templates[platform] || templates.bash;
+        }
+
         function naturalToCron(text) {
-            text = text.toLowerCase().trim();
-            
-            // Initialize default values
+            const input = text.toLowerCase().trim();
+            if (!input) return '* * * * *';
+
             let minute = '0';
             let hour = '9';
             let dom = '*';
             let month = '*';
             let dow = '*';
-            
-            // Check for time pattern first (om HH:MM or at HH:MM)
-            let timeMatch = text.match(/(?:om|at)\s+(\d+):(\d+)/i);
+
+            let timeMatch = input.match(/(?:om|at)\s+(\d{1,2}):(\d{2})/i);
             if (timeMatch) {
-                hour = timeMatch[1];
-                minute = timeMatch[2];
+                hour = String(parseInt(timeMatch[1], 10));
+                minute = String(parseInt(timeMatch[2], 10));
             } else {
-                // Check for just hour (om HH or at HH)
-                timeMatch = text.match(/(?:om|at)\s+(\d+)(?:\s+uur)?/i);
+                timeMatch = input.match(/(?:om|at)\s+(\d{1,2})(?:\s*uur)?/i);
                 if (timeMatch) {
-                    hour = timeMatch[1];
+                    hour = String(parseInt(timeMatch[1], 10));
                     minute = '0';
                 }
             }
-            
-            // Check for day of week patterns
-            if (text.match(/maandag|monday/i)) {
-                dow = '1';
-            } else if (text.match(/dinsdag|tuesday/i)) {
-                dow = '2';
-            } else if (text.match(/woensdag|wednesday/i)) {
-                dow = '3';
-            } else if (text.match(/donderdag|thursday/i)) {
-                dow = '4';
-            } else if (text.match(/vrijdag|friday/i)) {
-                dow = '5';
-            } else if (text.match(/zaterdag|saturday/i)) {
-                dow = '6';
-            } else if (text.match(/zondag|sunday/i)) {
-                dow = '0';
-            } else if (text.match(/werkdag|weekday/i)) {
-                dow = '1-5';
-            } else if (text.match(/weekend/i)) {
-                dow = '0,6';
-            }
-            
-            // Check for interval patterns
-            let intervalMatch = text.match(/(?:elke|every)\s+(\d+)\s+(?:minuten|minutes)/i);
-            if (intervalMatch) {
-                return `*/${intervalMatch[1]} * * * *`;
-            }
-            
-            intervalMatch = text.match(/(?:elk|every)\s+(\d+)\s+(?:uur|hours?)/i);
-            if (intervalMatch) {
-                return `0 */${intervalMatch[1]} * * *`;
-            }
-            
-            // Check for simple patterns
-            if (text.match(/(?:elke|every)\s+(?:minuut|minute)/i)) {
-                return '* * * * *';
-            }
-            
-            if (text.match(/(?:elk|every)\s+(?:uur|hour)/i)) {
-                return '0 * * * *';
-            }
-            
-            if (text.match(/(?:elke|every)\s+(?:dag|day)|dagelijks|daily/i)) {
-                // If time is specified, use it; otherwise midnight
+
+            if (input.match(/werkdag|weekday/i)) dow = '1-5';
+            if (input.match(/weekend/i)) dow = '0,6';
+            if (input.match(/maandag|monday/i)) dow = '1';
+            if (input.match(/dinsdag|tuesday/i)) dow = '2';
+            if (input.match(/woensdag|wednesday/i)) dow = '3';
+            if (input.match(/donderdag|thursday/i)) dow = '4';
+            if (input.match(/vrijdag|friday/i)) dow = '5';
+            if (input.match(/zaterdag|saturday/i)) dow = '6';
+            if (input.match(/zondag|sunday/i)) dow = '0';
+
+            let intervalMatch = input.match(/(?:elke|every)\s+(\d+)\s+(?:minuut|minuten|minute|minutes)/i);
+            if (intervalMatch) return `*/${intervalMatch[1]} * * * *`;
+
+            intervalMatch = input.match(/(?:elk|every)\s+(\d+)\s+(?:uur|hour|hours)/i);
+            if (intervalMatch) return `0 */${intervalMatch[1]} * * *`;
+
+            if (input.match(/(?:elke|every)\s+(?:minuut|minute)/i)) return '* * * * *';
+            if (input.match(/(?:elk|every)\s+(?:uur|hour)/i)) return '0 * * * *';
+
+            if (input.match(/dagelijks|daily|elke dag|every day/i)) {
                 if (!timeMatch) {
                     hour = '0';
                     minute = '0';
                 }
                 return `${minute} ${hour} * * *`;
             }
-            
-            // Check for day of month
-            let domMatch = text.match(/eerste\s+van\s+(?:de\s+)?maand|first\s+of\s+(?:the\s+)?month/i);
-            if (domMatch) {
+
+            if (input.match(/eerste van (de )?maand|first of (the )?month/i)) {
                 dom = '1';
                 if (!timeMatch) {
                     hour = '0';
                     minute = '0';
                 }
             }
-            
-            // Build the cron expression
+
             return `${minute} ${hour} ${dom} ${month} ${dow}`;
         }
 
-        // UI Updates
+        function drawHeatmap(runs) {
+            const canvas = document.getElementById('canvas-heatmap');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const dayCounts = new Array(365).fill(0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            runs.forEach(run => {
+                const diff = Math.floor((run - today) / (1000 * 60 * 60 * 24));
+                if (diff >= 0 && diff < 365) dayCounts[diff] += 1;
+            });
+
+            const maxCount = Math.max(...dayCounts, 1);
+            const cellWidth = width / 365;
+
+            dayCounts.forEach((count, i) => {
+                const intensity = count / maxCount;
+                const hue = 130 - (130 * intensity);
+                ctx.fillStyle = `hsl(${hue}, 82%, 48%)`;
+                ctx.fillRect(i * cellWidth, 0, cellWidth, height);
+            });
+
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 12; i++) {
+                const x = i * (365 / 12) * cellWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+        }
+
+        function highlightMap(fieldName) {
+            ['minute', 'hour', 'dom', 'month', 'dow'].forEach(name => {
+                const chip = document.getElementById(`map-${name}`);
+                chip.classList.remove('highlight');
+            });
+            if (fieldName) {
+                document.getElementById(`map-${fieldName}`).classList.add('highlight');
+            }
+        }
+
         function updateUI() {
             const result = parseCron(
                 fields.minute.value,
@@ -575,18 +1042,11 @@ spec:
                 fields.month.value,
                 fields.dow.value
             );
-            
-            // Update cron expression
+
             document.getElementById('cron-expr').textContent = result.cronStr || '* * * * *';
-            
-            // Update validation badge
-            const badge = document.getElementById('valid-badge');
-            badge.textContent = result.valid ? '✅' : '❌';
-            
-            // Update human text
-            document.getElementById('human-text').textContent = result.humanText || 'Invalid expression';
-            
-            // Update error
+            document.getElementById('human-text').textContent = result.humanText;
+            document.getElementById('status-tz').textContent = document.getElementById('timezone').value;
+
             const errorEl = document.getElementById('error-text');
             if (result.error) {
                 errorEl.textContent = result.error;
@@ -594,195 +1054,207 @@ spec:
             } else {
                 errorEl.classList.add('hidden');
             }
-            
-            // Update next runs
+
+            document.getElementById('status-valid').textContent = result.valid ? t('statusValid') : t('statusInvalid');
+            document.getElementById('status-valid').className = result.valid ? 'font-semibold text-emerald-700' : 'font-semibold text-red-700';
+
             const runsEl = document.getElementById('next-runs');
             runsEl.innerHTML = '';
             const tz = document.getElementById('timezone').value;
-            result.nextRuns.forEach((run, i) => {
+            const count = showAllRuns ? 50 : 3;
+
+            result.nextRuns.slice(0, count).forEach((run, i) => {
                 const div = document.createElement('div');
-                div.className = 'p-2 bg-gray-100 dark:bg-gray-700 rounded';
-                div.textContent = `${i+1}. ${run.toLocaleString('nl-NL', { timeZone: tz, dateStyle: 'full', timeStyle: 'short' })}`;
+                div.className = 'px-3 py-2 rounded-lg bg-slate-100 text-sm';
+                const locale = currentLanguage === 'nl' ? 'nl-NL' : 'en-US';
+                const localText = run.toLocaleString(locale, { timeZone: tz, dateStyle: 'full', timeStyle: 'short' });
+                div.textContent = `${i + 1}. ${localText}`;
                 runsEl.appendChild(div);
             });
-            
-            // Update code output
-            updateCodeOutput(result.cronStr);
-            
-            // Update heatmap
-            drawHeatmap(result.nextRuns);
-        }
 
-        function updateCodeOutput(cronStr) {
-            const code = generateCode(cronStr, currentTab);
-            document.querySelector('#code-output code').textContent = code;
-        }
-
-        function drawHeatmap(runs) {
-            const canvas = document.getElementById('canvas-heatmap');
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-            
-            ctx.clearRect(0, 0, width, height);
-            
-            // Count runs per day for next 365 days
-            const dayCounts = new Array(365).fill(0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            runs.forEach(run => {
-                const diff = Math.floor((run - today) / (1000 * 60 * 60 * 24));
-                if (diff >= 0 && diff < 365) {
-                    dayCounts[diff]++;
-                }
-            });
-            
-            const maxCount = Math.max(...dayCounts, 1);
-            const cellWidth = width / 365;
-            
-            dayCounts.forEach((count, i) => {
-                const intensity = count / maxCount;
-                const hue = 120 * (1 - intensity); // Green to red
-                ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
-                ctx.fillRect(i * cellWidth, 0, cellWidth, height);
-            });
-            
-            // Add grid lines
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 12; i++) {
-                const x = (i * 30.4 * cellWidth);
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
+            if (result.valid && result.nextRuns.length > 0) {
+                document.getElementById('status-next').textContent = calculateTimeUntil(result.nextRuns[0]);
+            } else {
+                document.getElementById('status-next').textContent = '-';
             }
+
+            updateCodeOutput(result.cronStr);
+            const heatmapRuns = result.valid ? calculateNextRuns(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value, 2000) : [];
+            drawHeatmap(heatmapRuns);
         }
 
-        // Event Listeners
-        Object.values(fields).forEach(field => {
+        Object.values(fields).forEach((field, index) => {
             field.addEventListener('input', updateUI);
+            const names = ['minute', 'hour', 'dom', 'month', 'dow'];
+            const currentName = names[index];
+            field.addEventListener('focus', () => highlightMap(currentName));
+            field.addEventListener('blur', () => highlightMap(null));
         });
 
         ['minute', 'hour', 'dom', 'month', 'dow'].forEach(field => {
-            document.getElementById(`${field}-preset`).addEventListener('change', (e) => {
+            document.getElementById(`${field}-preset`).addEventListener('change', e => {
                 fields[field].value = e.target.value;
                 updateUI();
             });
         });
 
-        document.getElementById('timezone').addEventListener('change', () => {
-            currentTimezone = document.getElementById('timezone').value;
+        document.getElementById('timezone').addEventListener('change', updateUI);
+
+        document.querySelectorAll('.quick-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setCron(btn.dataset.cron);
+                setStep(2);
+                showToast(t('exampleLoaded'));
+            });
+        });
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyMode(btn.dataset.mode, true);
+            });
+        });
+
+        document.getElementById('show-platforms').addEventListener('click', () => {
+            allPlatformsShown = !allPlatformsShown;
+            document.querySelectorAll('.advanced-platform').forEach(option => {
+                option.classList.toggle('hidden', !allPlatformsShown);
+            });
+            document.getElementById('show-platforms').textContent = allPlatformsShown ? t('hidePlatforms') : t('showPlatforms');
+            if (!allPlatformsShown && ['java', 'docker'].includes(currentPlatform)) {
+                currentPlatform = 'bash';
+                document.getElementById('platform-select').value = 'bash';
+                updateUI();
+            }
+        });
+
+        document.getElementById('platform-select').addEventListener('change', e => {
+            currentPlatform = e.target.value;
             updateUI();
         });
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        document.getElementById('toggle-runs').addEventListener('click', () => {
+            showAllRuns = !showAllRuns;
+            document.getElementById('toggle-runs').textContent = showAllRuns ? t('show3') : t('show50');
+            updateUI();
+        });
+
+        document.getElementById('to-step-2').addEventListener('click', () => {
+            setStep(2);
+            document.getElementById('step-2-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        document.getElementById('to-step-3').addEventListener('click', () => {
+            const result = parseCron(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value);
+            if (!result.valid) {
+                showToast(t('fixErrorsBeforeCode'));
+                return;
+            }
+            setStep(3);
+            document.getElementById('step-3-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        document.querySelectorAll('#stepper .step-pill').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => {
-                    b.classList.remove('tab-active');
-                    b.classList.add('tab-inactive');
-                });
-                btn.classList.add('tab-active');
-                btn.classList.remove('tab-inactive');
-                currentTab = btn.dataset.tab;
-                updateUI();
+                const targetStep = parseInt(btn.dataset.step, 10);
+                if (targetStep === 3) {
+                    const result = parseCron(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value);
+                    if (!result.valid) {
+                        showToast(t('step3ValidOnly'));
+                        return;
+                    }
+                }
+                setStep(targetStep);
             });
-        });
-
-        document.getElementById('copy-code').addEventListener('click', () => {
-            const code = document.querySelector('#code-output code').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = document.getElementById('copy-code');
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = 'Copy', 2000);
-            });
-        });
-
-        document.getElementById('copy-cron').addEventListener('click', () => {
-            const cronText = document.getElementById('cron-expr').textContent;
-            navigator.clipboard.writeText(cronText).then(() => {
-                const btn = document.getElementById('copy-cron');
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = 'Copy', 2000);
-            });
-        });
-
-        document.getElementById('download-code').addEventListener('click', () => {
-            const code = document.querySelector('#code-output code').textContent;
-            const extensions = { bash: 'sh', nodejs: 'js', python: 'py', java: 'java', docker: 'yml' };
-            const ext = extensions[currentTab];
-            const blob = new Blob([code], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cronjob.${ext}`;
-            a.click();
-        });
-
-        document.getElementById('test-run').addEventListener('click', () => {
-            const result = parseCron(
-                fields.minute.value, fields.hour.value, fields.dom.value,
-                fields.month.value, fields.dow.value
-            );
-            console.log('=== CRON JOB TEST RUN ===');
-            console.log('Expression:', result.cronStr);
-            console.log('Description:', result.humanText);
-            console.log('Next 10 runs:');
-            result.nextRuns.slice(0, 10).forEach((run, i) => {
-                console.log(`  ${i+1}. ${run.toISOString()}`);
-            });
-            alert('Test run logged to console (F12)');
-        });
-
-        document.getElementById('save-favorite').addEventListener('click', () => {
-            const favorites = JSON.parse(localStorage.getItem('cronFavorites') || '[]');
-            const result = parseCron(
-                fields.minute.value, fields.hour.value, fields.dom.value,
-                fields.month.value, fields.dow.value
-            );
-            favorites.push({
-                cron: result.cronStr,
-                description: result.humanText,
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('cronFavorites', JSON.stringify(favorites));
-            alert('Saved to favorites!');
         });
 
         document.getElementById('parse-natural').addEventListener('click', () => {
             const text = document.getElementById('natural-input').value;
             const cron = naturalToCron(text);
-            const parts = cron.split(' ');
-            fields.minute.value = parts[0];
-            fields.hour.value = parts[1];
-            fields.dom.value = parts[2];
-            fields.month.value = parts[3];
-            fields.dow.value = parts[4];
-            updateUI();
+            setCron(cron);
+            setStep(2);
+            showToast(t('textConverted'));
         });
 
-        // Render Presets
+        document.getElementById('copy-cron').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.getElementById('cron-expr').textContent)
+                .then(() => showToast(t('cronCopied')));
+        });
+
+        document.getElementById('copy-code').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.querySelector('#code-output code').textContent)
+                .then(() => showToast(t('codeCopied')));
+        });
+
+        document.getElementById('download-code').addEventListener('click', () => {
+            const code = document.querySelector('#code-output code').textContent;
+            const extMap = { bash: 'sh', nodejs: 'js', python: 'py', java: 'java', docker: 'yml' };
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `cronjob.${extMap[currentPlatform] || 'txt'}`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast(t('downloaded'));
+        });
+
+        document.getElementById('test-run').addEventListener('click', () => {
+            const result = parseCron(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value);
+            console.log('=== CRON TEST ===');
+            console.log('Expressie:', result.cronStr);
+            console.log('Beschrijving:', result.humanText);
+            result.nextRuns.slice(0, 10).forEach((run, i) => {
+                console.log(`${i + 1}. ${run.toISOString()}`);
+            });
+            showToast(t('consoleLogged'));
+        });
+
+        document.getElementById('save-favorite').addEventListener('click', () => {
+            const result = parseCron(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value);
+            if (!result.valid) {
+                showToast(t('cannotSaveInvalid'));
+                return;
+            }
+            const name = prompt(t('favoritePrompt'), result.humanText.slice(0, 40));
+            if (name === null) return;
+
+            const favorites = JSON.parse(localStorage.getItem('cronFavorites') || '[]');
+            favorites.push({
+                name: name.trim() || t('unnamed'),
+                cron: result.cronStr,
+                description: result.humanText,
+                timezone: document.getElementById('timezone').value,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('cronFavorites', JSON.stringify(favorites));
+            showToast(t('favoriteSaved'));
+        });
+
+        document.getElementById('language-select').addEventListener('change', event => {
+            currentLanguage = event.target.value;
+            applyLanguage();
+        });
+
         const presetsGrid = document.getElementById('presets-grid');
         presets.forEach(preset => {
-            const btn = document.createElement('button');
-            btn.className = 'px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded hover:bg-blue-200 dark:hover:bg-blue-800 text-sm';
-            btn.textContent = preset.name;
-            btn.title = preset.desc;
-            btn.addEventListener('click', () => {
-                const parts = preset.cron.split(' ');
-                fields.minute.value = parts[0];
-                fields.hour.value = parts[1];
-                fields.dom.value = parts[2];
-                fields.month.value = parts[3];
-                fields.dow.value = parts[4];
-                updateUI();
+            const button = document.createElement('button');
+            button.className = 'px-3 py-2 rounded-lg bg-sky-100 hover:bg-sky-200 text-left text-sm';
+            button.textContent = preset.name;
+            button.title = preset.desc;
+            button.addEventListener('click', () => {
+                setCron(preset.cron);
+                setStep(2);
+                showToast(t('presetLoaded', { name: preset.name }));
             });
-            presetsGrid.appendChild(btn);
+            presetsGrid.appendChild(button);
         });
 
-        // Initial render
-        updateUI();
+        currentLanguage = 'en';
+        document.getElementById('language-select').value = currentLanguage;
+        currentMode = getCookie('cronPlannerMode') === 'advanced' ? 'advanced' : 'beginner';
+        setStep(1);
+        applyLanguage();
+        applyMode(currentMode, false);
     </script>
 </body>
 </html>
