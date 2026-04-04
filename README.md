@@ -1,6 +1,16 @@
-# 🕐 Cronjobber an Advanced Cron Job Code Generator
+# 🕐 Cronjobber: Advanced Cron Job Code Generator
+
+Version 1.1.0
 
 A powerful, interactive web-based tool for creating, testing, and visualizing cron job schedules. Generate production-ready code in multiple languages with a beautiful, user-friendly interface. See it in action at **[jordibrw.nl](https://www.jordibrw.nl/projects/cron-generator.html)**.
+
+## What's New in 1.1.0
+
+- Beginner mode is now the default on first visit.
+- The selected mode is stored in a cookie, so returning users stay on their preferred view.
+- The frequency map is always visible and no longer depends on a hide/show toggle.
+- Page metadata was updated for better SEO, including title, description, canonical URL, robots directives, and social preview tags.
+- `robots.txt` and `sitemap.xml` were added at the site root for search engine discovery.
 
 ## Features
 
@@ -23,7 +33,13 @@ A powerful, interactive web-based tool for creating, testing, and visualizing cr
 📊 **Advanced Visualization**
 - Next 50 scheduled run times with timezone support
 - 365-day heat map showing execution frequency distribution
+- Frequency map stays visible at all times for faster schedule review
 - Real-time human-readable description of schedules
+
+🎛️ **Mode Persistence**
+- Beginner mode is the default entry state
+- Switch to advanced mode manually when you need full cron field control
+- Preferred mode is stored in a cookie and restored on the next visit
 
 🎯 **50+ Quick Presets**
 Including:
@@ -49,6 +65,9 @@ Simply open `cron-generator.html` in any modern web browser.
 
 ### Option 2: GitHub Pages
 Host the file on GitHub Pages for easy sharing and access.
+
+### Option 3: Current Site Files
+The repository also includes `robots.txt` and `sitemap.xml` so the public site can be indexed cleanly when hosted from the repository root.
 
 ## Usage
 
@@ -202,6 +221,10 @@ The 365-day heat map shows:
 - Green cells = frequent execution periods
 - Red cells = infrequent execution periods
 - Helps identify execution patterns at a glance
+- The heat map remains visible so you can always compare schedule density while editing
+
+### Mode Persistence
+The app starts in beginner mode by default. When a user switches to advanced mode, the choice is stored in a cookie and restored automatically on the next visit.
 
 ### Natural Language Parser
 Supports multiple languages:
@@ -225,6 +248,10 @@ Supports multiple languages:
 - Check the cron expression is what you intended
 - Consider daylight saving time changes
 
+**Issue: Beginner or advanced mode does not persist**
+- Make sure cookies are enabled in the browser
+- Clear the site cookie if you want to reset the saved mode
+
 ## Contributing
 
 Contributions are welcome! Feel free to:
@@ -240,6 +267,13 @@ MIT License - Feel free to use this tool commercially and personally.
 ## Author
 
 Created with ❤️ for developers managing scheduled tasks.
+
+## Version Notes
+
+1.1.0
+- Added cookie-based mode persistence
+- Kept the frequency map always visible
+- Refreshed SEO metadata and site discovery files
 
 ---
 
