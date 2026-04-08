@@ -2,7 +2,7 @@
 
 Version 1.1.0
 
-A powerful, interactive web-based tool for creating, testing, and visualizing cron job schedules. Generate production-ready code in multiple languages with a beautiful, user-friendly interface. See it in action at **[jordibrw.nl](https://www.jordibrw.nl/projects/cron-generator.html)**.
+A powerful, interactive web-based tool for creating, testing, and visualizing cron job schedules. Generate production-ready code in multiple languages with a beautiful, user-friendly interface. See it in action at **[jordibrw.nl](https://www.jordibrw.nl/projects/cron-generator.html)** or on his own domain **[cronjobber](https://www.cronjobber.com)**
 
 ## What's New in 1.1.0
 
