@@ -110,6 +110,46 @@
             background: linear-gradient(180deg, rgba(15, 23, 42, 1), rgba(30, 41, 59, 1));
             color: #e2e8f0;
         }
+        .path-card {
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.88));
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        }
+        .path-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(14, 165, 233, 0.6);
+            box-shadow: 0 16px 28px rgba(14, 165, 233, 0.14);
+        }
+        .wizard-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .wizard-modal {
+            width: min(720px, 100%);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.95));
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+        }
+        .wizard-step.is-hidden {
+            display: none;
+        }
+        .wizard-dot {
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 999px;
+            background: #cbd5e1;
+        }
+        .wizard-dot.active {
+            background: #0284c7;
+        }
         #canvas-heatmap {
             border: 1px solid #cbd5e1;
             border-radius: 12px;
@@ -152,6 +192,9 @@
             }
             .hero-actions > * {
                 width: 100%;
+            }
+            .path-grid {
+                grid-template-columns: 1fr;
             }
             #cron-expr {
                 font-size: 0.95rem;
@@ -245,6 +288,142 @@
             </div>
         </header>
 
+        <section id="path-gate" class="card rounded-3xl p-5 lg:p-6 fade-in">
+            <div class="flex flex-col gap-4">
+                <div>
+                    <p id="path-kicker" class="section-label">Choose your path</p>
+                    <h2 id="path-title" class="text-2xl lg:text-3xl font-black text-slate-900 mt-1">How do you want to build your schedule?</h2>
+                    <p id="path-subtitle" class="text-slate-600 mt-2 max-w-3xl">Pick the Easy wizard for guided modal steps, or choose Advanced for direct full-field control.</p>
+                </div>
+                <div class="path-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="path-easy" class="path-card rounded-3xl p-5 text-left">
+                        <p id="path-easy-kicker" class="text-xs uppercase tracking-[0.2em] text-sky-700 font-bold">Easy path</p>
+                        <h3 id="path-easy-title" class="text-xl font-black text-slate-900 mt-2">Wizard in modals</h3>
+                        <p id="path-easy-desc" class="text-sm text-slate-600 mt-2">Answer a few questions about frequency, time, and timezone. Cronjobber builds the expression for you.</p>
+                        <span id="path-easy-badge" class="inline-flex mt-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">Best for quick setup</span>
+                    </button>
+                    <button id="path-advanced" class="path-card rounded-3xl p-5 text-left">
+                        <p id="path-advanced-kicker" class="text-xs uppercase tracking-[0.2em] text-emerald-700 font-bold">Advanced path</p>
+                        <h3 id="path-advanced-title" class="text-xl font-black text-slate-900 mt-2">Full control panel</h3>
+                        <p id="path-advanced-desc" class="text-sm text-slate-600 mt-2">Use all cron fields, presets, validation tools, run previews, heatmap, and code export in one workspace.</p>
+                        <span id="path-advanced-badge" class="inline-flex mt-4 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Best for precision</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="easy-wizard" class="wizard-overlay hidden" aria-hidden="true">
+            <div class="wizard-modal p-5 lg:p-6">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p id="wizard-kicker" class="section-label">Easy wizard</p>
+                        <h3 id="wizard-title" class="text-xl font-black text-slate-900 mt-1">Build your schedule in guided steps</h3>
+                    </div>
+                    <button id="wizard-close" class="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-sm">Close</button>
+                </div>
+
+                <div class="mt-4 flex items-center gap-2" id="wizard-dots">
+                    <span class="wizard-dot active" data-dot="1"></span>
+                    <span class="wizard-dot" data-dot="2"></span>
+                    <span class="wizard-dot" data-dot="3"></span>
+                    <span class="wizard-dot" data-dot="4"></span>
+                </div>
+
+                <div class="mt-5 space-y-4">
+                    <section class="wizard-step" data-step="1">
+                        <label id="wizard-step1-label" class="block text-sm font-semibold mb-2">1. Choose frequency</label>
+                        <select id="wizard-frequency" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white">
+                            <option id="wizard-frequency-daily" value="daily">Every day</option>
+                            <option id="wizard-frequency-weekdays" value="weekdays">Weekdays</option>
+                            <option id="wizard-frequency-hourly" value="hourly">Every hour</option>
+                            <option id="wizard-frequency-interval15" value="interval15">Every 15 minutes</option>
+                            <option id="wizard-frequency-custom" value="custom">Custom text</option>
+                        </select>
+                        <input id="wizard-custom-text" type="text" class="w-full mt-3 px-3 py-2.5 rounded-xl border border-slate-300 bg-white hidden" placeholder="e.g. every weekday at 09:00">
+                    </section>
+
+                    <section class="wizard-step is-hidden" data-step="2">
+                        <label id="wizard-step2-label" class="block text-sm font-semibold mb-2">2. Preferred time</label>
+                        <input id="wizard-time" type="time" value="09:00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white">
+                        <p id="wizard-step2-help" class="text-xs text-slate-500 mt-2">Used for daily/weekday schedules.</p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                            <div>
+                                <label id="wizard-day-label" class="block text-xs font-semibold mb-1">Day</label>
+                                <select id="wizard-day" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white">
+                                    <option id="wizard-day-any" value="*">Any day</option>
+                                    <option id="wizard-day-weekdays" value="1-5">Weekdays</option>
+                                    <option id="wizard-day-weekends" value="0,6">Weekends</option>
+                                    <option id="wizard-day-mon" value="1">Monday</option>
+                                    <option id="wizard-day-tue" value="2">Tuesday</option>
+                                    <option id="wizard-day-wed" value="3">Wednesday</option>
+                                    <option id="wizard-day-thu" value="4">Thursday</option>
+                                    <option id="wizard-day-fri" value="5">Friday</option>
+                                    <option id="wizard-day-sat" value="6">Saturday</option>
+                                    <option id="wizard-day-sun" value="0">Sunday</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label id="wizard-month-label" class="block text-xs font-semibold mb-1">Month</label>
+                                <select id="wizard-month" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white">
+                                    <option id="wizard-month-any" value="*">Any month</option>
+                                    <option id="wizard-month-1" value="1">January</option>
+                                    <option id="wizard-month-2" value="2">February</option>
+                                    <option id="wizard-month-3" value="3">March</option>
+                                    <option id="wizard-month-4" value="4">April</option>
+                                    <option id="wizard-month-5" value="5">May</option>
+                                    <option id="wizard-month-6" value="6">June</option>
+                                    <option id="wizard-month-7" value="7">July</option>
+                                    <option id="wizard-month-8" value="8">August</option>
+                                    <option id="wizard-month-9" value="9">September</option>
+                                    <option id="wizard-month-10" value="10">October</option>
+                                    <option id="wizard-month-11" value="11">November</option>
+                                    <option id="wizard-month-12" value="12">December</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 mt-3">
+                            <p id="wizard-mini-title" class="text-xs font-semibold text-slate-700">Live preview</p>
+                            <code id="wizard-mini-cron" class="block mt-2 text-sm font-mono bg-white border border-slate-200 rounded-lg px-3 py-2">0 9 * * *</code>
+                            <p id="wizard-mini-human" class="text-xs text-slate-600 mt-2">Daily at 09:00</p>
+                            <p class="text-xs text-slate-600 mt-1"><span id="wizard-mini-next-label">Next run</span>: <span id="wizard-mini-next">-</span></p>
+                        </div>
+                    </section>
+
+                    <section class="wizard-step is-hidden" data-step="3">
+                        <label id="wizard-step3-label" class="block text-sm font-semibold mb-2">3. Choose timezone</label>
+                        <select id="wizard-timezone" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white">
+                            <option value="UTC">UTC</option>
+                            <option value="Europe/Amsterdam" selected>Europe/Amsterdam</option>
+                            <option value="America/New_York">America/New_York</option>
+                            <option value="America/Los_Angeles">America/Los_Angeles</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo</option>
+                        </select>
+                    </section>
+
+                    <section class="wizard-step is-hidden" data-step="4">
+                        <p id="wizard-step4-label" class="text-sm font-semibold">4. Review</p>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 mt-2">
+                            <p id="wizard-step4-summary" class="text-sm text-slate-600">This wizard will generate:</p>
+                            <code id="wizard-review-cron" class="block mt-2 text-base font-mono bg-white border border-slate-200 rounded-lg px-3 py-2">0 9 * * *</code>
+                            <p id="wizard-review-human" class="text-sm text-slate-600 mt-2">Daily at 09:00</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="mt-6 flex flex-wrap justify-between gap-2">
+                    <button id="wizard-back" class="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-sm" disabled>Back</button>
+                    <div class="flex gap-2">
+                        <button id="wizard-next" class="px-4 py-2.5 rounded-xl bg-sky-700 text-white hover:bg-sky-800 text-sm">Next</button>
+                        <button id="wizard-apply" class="px-4 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-sm hidden">Apply schedule</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="builder-shell" class="hidden">
+
         <section class="card rounded-3xl p-4 lg:p-5 mb-5 fade-in">
             <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-4 xl:items-center">
                 <div>
@@ -254,19 +433,19 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="workflow-step rounded-2xl p-4">
-                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 1</p>
+                        <p id="workflow-step-label-1" class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 1</p>
                         <strong id="workflow-step-1" class="block mt-1 text-sm">Choose schedule</strong>
-                        <p class="text-sm text-slate-600 mt-1">Start simple, then refine only if needed.</p>
+                        <p id="workflow-step-desc-1" class="text-sm text-slate-600 mt-1">Start simple, then refine only if needed.</p>
                     </div>
                     <div class="workflow-step rounded-2xl p-4">
-                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 2</p>
+                        <p id="workflow-step-label-2" class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 2</p>
                         <strong id="workflow-step-2" class="block mt-1 text-sm">Validate planning</strong>
-                        <p class="text-sm text-slate-600 mt-1">See the next runs before you export.</p>
+                        <p id="workflow-step-desc-2" class="text-sm text-slate-600 mt-1">See the next runs before you export.</p>
                     </div>
                     <div class="workflow-step rounded-2xl p-4">
-                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 3</p>
+                        <p id="workflow-step-label-3" class="text-xs uppercase tracking-[0.18em] text-slate-500">Step 3</p>
                         <strong id="workflow-step-3" class="block mt-1 text-sm">Generate code</strong>
-                        <p class="text-sm text-slate-600 mt-1">Copy platform-specific code in one click.</p>
+                        <p id="workflow-step-desc-3" class="text-sm text-slate-600 mt-1">Copy platform-specific code in one click.</p>
                     </div>
                 </div>
             </div>
@@ -285,11 +464,11 @@
 
                     <div class="mt-5">
                         <p id="mode-label" class="text-sm font-medium mb-2">Mode</p>
-                        <div class="inline-flex rounded-full bg-slate-100 p-1 shadow-inner" role="radiogroup" aria-label="Choose mode">
+                        <div id="mode-group" class="inline-flex rounded-full bg-slate-100 p-1 shadow-inner" role="radiogroup" aria-label="Choose mode">
                             <button id="mode-beginner" class="mode-btn px-4 py-2 rounded-full text-sm font-semibold bg-white shadow" data-mode="beginner">Beginner</button>
                             <button id="mode-advanced" class="mode-btn px-4 py-2 rounded-full text-sm font-semibold text-slate-600" data-mode="advanced">Advanced</button>
                         </div>
-                        <p class="text-xs text-slate-500 mt-2">Beginner keeps the interface focused. Advanced unlocks exact cron control.</p>
+                        <p id="mode-help" class="text-xs text-slate-500 mt-2">Beginner keeps the interface focused. Advanced unlocks exact cron control.</p>
                     </div>
 
                     <div id="beginner-block" class="mt-5 space-y-4">
@@ -312,60 +491,60 @@
                         <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-sm font-medium mb-1">Minute (0-59)</label>
+                                <label id="advanced-minute-label" class="block text-sm font-medium mb-1">Minute (0-59)</label>
                                 <input type="text" id="minute" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
                                 <select id="minute-preset" class="w-full mt-1.5 px-2 py-2 text-sm border border-slate-300 rounded-xl bg-white">
-                                    <option value="*">Every minute (*)</option>
-                                    <option value="0">At :00</option>
-                                    <option value="*/5">Every 5 min (*/5)</option>
-                                    <option value="*/15">Every 15 min (*/15)</option>
-                                    <option value="0,30">At :00 and :30</option>
+                                    <option id="minute-opt-every" value="*">Every minute (*)</option>
+                                    <option id="minute-opt-at00" value="0">At :00</option>
+                                    <option id="minute-opt-5" value="*/5">Every 5 min (*/5)</option>
+                                    <option id="minute-opt-15" value="*/15">Every 15 min (*/15)</option>
+                                    <option id="minute-opt-0030" value="0,30">At :00 and :30</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Hour (0-23)</label>
+                                <label id="advanced-hour-label" class="block text-sm font-medium mb-1">Hour (0-23)</label>
                                 <input type="text" id="hour" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
                                 <select id="hour-preset" class="w-full mt-1.5 px-2 py-2 text-sm border border-slate-300 rounded-xl bg-white">
-                                    <option value="*">Every hour (*)</option>
-                                    <option value="0">Midnight (0)</option>
+                                    <option id="hour-opt-every" value="*">Every hour (*)</option>
+                                    <option id="hour-opt-midnight" value="0">Midnight (0)</option>
                                     <option value="9">09:00</option>
-                                    <option value="*/2">Every 2 hours (*/2)</option>
-                                    <option value="9-17">Office hours (9-17)</option>
+                                    <option id="hour-opt-2" value="*/2">Every 2 hours (*/2)</option>
+                                    <option id="hour-opt-office" value="9-17">Office hours (9-17)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Day of month (1-31)</label>
+                                <label id="advanced-dom-label" class="block text-sm font-medium mb-1">Day of month (1-31)</label>
                                 <input type="text" id="dom" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
                                 <select id="dom-preset" class="w-full mt-1.5 px-2 py-2 text-sm border border-slate-300 rounded-xl bg-white">
-                                    <option value="*">Every day (*)</option>
-                                    <option value="1">First day (1)</option>
-                                    <option value="15">Mid-month (15)</option>
-                                    <option value="1,15">1st and 15th</option>
+                                    <option id="dom-opt-every" value="*">Every day (*)</option>
+                                    <option id="dom-opt-first" value="1">First day (1)</option>
+                                    <option id="dom-opt-mid" value="15">Mid-month (15)</option>
+                                    <option id="dom-opt-first-mid" value="1,15">1st and 15th</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Month (1-12)</label>
+                                <label id="advanced-month-label" class="block text-sm font-medium mb-1">Month (1-12)</label>
                                 <input type="text" id="month" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
                                 <select id="month-preset" class="w-full mt-1.5 px-2 py-2 text-sm border border-slate-300 rounded-xl bg-white">
-                                    <option value="*">Every month (*)</option>
-                                    <option value="1">January (1)</option>
-                                    <option value="6-8">Summer (6-8)</option>
-                                    <option value="12">December (12)</option>
+                                    <option id="month-opt-every" value="*">Every month (*)</option>
+                                    <option id="month-opt-jan" value="1">January (1)</option>
+                                    <option id="month-opt-summer" value="6-8">Summer (6-8)</option>
+                                    <option id="month-opt-dec" value="12">December (12)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="mt-4">
-                            <label class="block text-sm font-medium mb-1">Day of week (0-6, 0=Sun)</label>
+                            <label id="advanced-dow-label" class="block text-sm font-medium mb-1">Day of week (0-6, 0=Sun)</label>
                             <input type="text" id="dow" value="*" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
                             <select id="dow-preset" class="w-full mt-1.5 px-2 py-2 text-sm border border-slate-300 rounded-xl bg-white">
-                                <option value="*">Every day (*)</option>
-                                <option value="1-5">Weekdays (1-5)</option>
-                                <option value="0,6">Weekend (0,6)</option>
-                                <option value="1">Monday only</option>
+                                <option id="dow-opt-every" value="*">Every day (*)</option>
+                                <option id="dow-opt-weekdays" value="1-5">Weekdays (1-5)</option>
+                                <option id="dow-opt-weekend" value="0,6">Weekend (0,6)</option>
+                                <option id="dow-opt-monday" value="1">Monday only</option>
                             </select>
                         </div>
                         </div>
-                        <p class="text-xs text-slate-500">Tip: use * for all values, commas for lists, hyphens for ranges, and / for intervals.</p>
+                        <p id="advanced-tip" class="text-xs text-slate-500">Tip: use * for all values, commas for lists, hyphens for ranges, and / for intervals.</p>
                     </div>
 
                     <div class="mt-5 rounded-2xl bg-slate-50 border border-slate-200 p-4">
@@ -404,7 +583,7 @@
                     <div class="flex flex-col gap-4">
                         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                             <div>
-                                <p class="section-label text-slate-300/70">Live command center</p>
+                                <p id="live-kicker" class="section-label text-slate-300/70">Live command center</p>
                                 <h3 id="live-title" class="font-bold text-xl mt-1 text-white">Live summary</h3>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
@@ -416,7 +595,7 @@
                         <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
                             <div class="flex flex-wrap items-center gap-2">
                                 <code id="cron-expr" class="text-lg font-mono bg-white/10 px-3 py-2 rounded-xl">* * * * *</code>
-                                <span class="px-3 py-2 rounded-xl bg-emerald-400/15 text-emerald-200 text-sm font-semibold">Validated output</span>
+                                <span id="validated-output-label" class="px-3 py-2 rounded-xl bg-emerald-400/15 text-emerald-200 text-sm font-semibold">Validated output</span>
                             </div>
 
                             <div id="cron-map" class="flex flex-wrap gap-2 mt-4 text-sm">
@@ -471,11 +650,11 @@
                         <div>
                             <label id="platform-label" class="block text-sm font-medium mb-1">Where will this run?</label>
                             <select id="platform-select" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
-                                <option value="bash">Linux crontab (Bash)</option>
-                                <option value="nodejs">Node.js</option>
-                                <option value="python">Python</option>
-                                <option class="advanced-platform hidden" value="java">Java (Quartz)</option>
-                                <option class="advanced-platform hidden" value="docker">Docker / Kubernetes</option>
+                                <option id="platform-opt-bash" value="bash">Linux crontab (Bash)</option>
+                                <option id="platform-opt-node" value="nodejs">Node.js</option>
+                                <option id="platform-opt-python" value="python">Python</option>
+                                <option id="platform-opt-java" class="advanced-platform hidden" value="java">Java (Quartz)</option>
+                                <option id="platform-opt-docker" class="advanced-platform hidden" value="docker">Docker / Kubernetes</option>
                             </select>
                         </div>
                         <div class="flex items-end">
@@ -505,6 +684,7 @@
                 </section>
             </main>
         </section>
+        </div>
     </div>
 
     <script>
@@ -514,6 +694,7 @@
         let allPlatformsShown = false;
         let currentMode = 'beginner';
         let currentLanguage = 'en';
+        let wizardStep = 1;
 
         const i18n = {
             en: {
@@ -527,10 +708,72 @@
                 heroStartBody: 'Beginner mode keeps the first decision simple. Advanced mode opens the full cron matrix.',
                 heroBenefit1: 'Validate before export',
                 heroBenefit2: 'Timezone-aware previews',
+                pathKicker: 'Choose your path',
+                pathTitle: 'How do you want to build your schedule?',
+                pathSubtitle: 'Pick the Easy wizard for guided modal steps, or choose Advanced for direct full-field control.',
+                pathEasyKicker: 'Easy path',
+                pathEasyTitle: 'Wizard in modals',
+                pathEasyDesc: 'Answer a few questions about frequency, time, and timezone. Cronjobber builds the expression for you.',
+                pathEasyBadge: 'Best for quick setup',
+                pathAdvancedKicker: 'Advanced path',
+                pathAdvancedTitle: 'Full control panel',
+                pathAdvancedDesc: 'Use all cron fields, presets, validation tools, run previews, heatmap, and code export in one workspace.',
+                pathAdvancedBadge: 'Best for precision',
+                wizardKicker: 'Easy wizard',
+                wizardTitle: 'Build your schedule in guided steps',
+                wizardClose: 'Close',
+                wizardStep1Label: '1. Choose frequency',
+                wizardFrequencyDaily: 'Every day',
+                wizardFrequencyWeekdays: 'Weekdays',
+                wizardFrequencyHourly: 'Every hour',
+                wizardFrequencyInterval15: 'Every 15 minutes',
+                wizardFrequencyCustom: 'Custom text',
+                wizardCustomPlaceholder: 'e.g. every weekday at 09:00',
+                wizardStep2Label: '2. Time, day, and month',
+                wizardStep2Help: 'Use these filters to narrow your schedule window.',
+                wizardDayLabel: 'Day',
+                wizardDayAny: 'Any day',
+                wizardDayWeekdays: 'Weekdays',
+                wizardDayWeekends: 'Weekends',
+                wizardDayMon: 'Monday',
+                wizardDayTue: 'Tuesday',
+                wizardDayWed: 'Wednesday',
+                wizardDayThu: 'Thursday',
+                wizardDayFri: 'Friday',
+                wizardDaySat: 'Saturday',
+                wizardDaySun: 'Sunday',
+                wizardMonthLabel: 'Month',
+                wizardMonthAny: 'Any month',
+                wizardMonth1: 'January',
+                wizardMonth2: 'February',
+                wizardMonth3: 'March',
+                wizardMonth4: 'April',
+                wizardMonth5: 'May',
+                wizardMonth6: 'June',
+                wizardMonth7: 'July',
+                wizardMonth8: 'August',
+                wizardMonth9: 'September',
+                wizardMonth10: 'October',
+                wizardMonth11: 'November',
+                wizardMonth12: 'December',
+                wizardMiniTitle: 'Live preview',
+                wizardMiniNextLabel: 'Next run',
+                wizardStep3Label: '3. Choose timezone',
+                wizardStep4Label: '4. Review',
+                wizardStep4Summary: 'This wizard will generate:',
+                wizardBack: 'Back',
+                wizardNext: 'Next',
+                wizardApply: 'Apply schedule',
                 languageLabel: 'Language',
                 howTitle: 'How the app works',
                 howSubtitle: '1) Choose a schedule, 2) validate the planning, 3) choose your runtime and copy the code.',
                 workflowLabel: 'Workflow',
+                workflowStepLabel1: 'Step 1',
+                workflowStepLabel2: 'Step 2',
+                workflowStepLabel3: 'Step 3',
+                workflowStepDesc1: 'Start simple, then refine only if needed.',
+                workflowStepDesc2: 'See the next runs before you export.',
+                workflowStepDesc3: 'Copy platform-specific code in one click.',
                 inputLabel: 'Input',
                 reviewLabel: 'Review',
                 exportLabel: 'Export',
@@ -550,14 +793,17 @@
                 presetSubtitleWork: 'Business-hour and weekday patterns',
                 presetSubtitleMaintenance: 'Backups, cleanup, and scans',
                 presetSubtitleCalendar: 'Longer cycles and date-based jobs',
+                presetCronLabel: 'Cron',
                 step1: '1. Choose schedule',
                 step2: '2. Validate planning',
                 step3: '3. Generate code',
                 step1Title: 'Step 1: Choose your schedule',
                 step1Subtitle: 'Start with plain language or configure each cron field manually.',
                 modeLabel: 'Mode',
+                modeGroupAria: 'Choose mode',
                 modeBeginner: 'Beginner',
                 modeAdvanced: 'Advanced',
+                modeHelp: 'Beginner keeps the interface focused. Advanced unlocks exact cron control.',
                 naturalLabel: 'Describe when it should run',
                 naturalPlaceholder: 'e.g. every weekday at 09:00',
                 parseNatural: 'Convert schedule',
@@ -568,14 +814,48 @@
                 quick3: 'Every 15 minutes',
                 timezoneLabel: 'Timezone',
                 toStep2: 'Next: validate planning',
+                advancedMinuteLabel: 'Minute (0-59)',
+                minuteOptEvery: 'Every minute (*)',
+                minuteOptAt00: 'At :00',
+                minuteOpt5: 'Every 5 min (*/5)',
+                minuteOpt15: 'Every 15 min (*/15)',
+                minuteOpt0030: 'At :00 and :30',
+                advancedHourLabel: 'Hour (0-23)',
+                hourOptEvery: 'Every hour (*)',
+                hourOptMidnight: 'Midnight (0)',
+                hourOpt2: 'Every 2 hours (*/2)',
+                hourOptOffice: 'Office hours (9-17)',
+                advancedDomLabel: 'Day of month (1-31)',
+                domOptEvery: 'Every day (*)',
+                domOptFirst: 'First day (1)',
+                domOptMid: 'Mid-month (15)',
+                domOptFirstMid: '1st and 15th',
+                advancedMonthLabel: 'Month (1-12)',
+                monthOptEvery: 'Every month (*)',
+                monthOptJan: 'January (1)',
+                monthOptSummer: 'Summer (6-8)',
+                monthOptDec: 'December (12)',
+                advancedDowLabel: 'Day of week (0-6, 0=Sun)',
+                dowOptEvery: 'Every day (*)',
+                dowOptWeekdays: 'Weekdays (1-5)',
+                dowOptWeekend: 'Weekend (0,6)',
+                dowOptMonday: 'Monday only',
+                advancedTip: 'Tip: use * for all values, commas for lists, hyphens for ranges, and / for intervals.',
+                liveKicker: 'Live command center',
                 liveTitle: 'Live summary',
                 copyCron: 'Copy cron',
+                validatedOutputLabel: 'Validated output',
                 domDowTip: 'Note: day-of-month and day-of-week are separate filters. Combine carefully to avoid unexpected schedules.',
                 mapMinute: 'minute',
                 mapHour: 'hour',
                 mapDay: 'day',
                 mapMonth: 'month',
                 mapWeekday: 'weekday',
+                mapMinuteTitle: 'Minute (0-59)',
+                mapHourTitle: 'Hour (0-23)',
+                mapDayTitle: 'Day of month (1-31)',
+                mapMonthTitle: 'Month (1-12)',
+                mapWeekdayTitle: 'Day of week (0-6)',
                 statusLabel: 'Status',
                 tzStatusLabel: 'Timezone',
                 nextRunLabel: 'Next run',
@@ -589,9 +869,15 @@
                 step3Title: 'Step 3: Generate code',
                 step3Subtitle: 'Choose where this schedule runs, then copy your snippet.',
                 platformLabel: 'Where will this run?',
+                platformOptBash: 'Linux crontab (Bash)',
+                platformOptNode: 'Node.js',
+                platformOptPython: 'Python',
+                platformOptJava: 'Java (Quartz)',
+                platformOptDocker: 'Docker / Kubernetes',
                 showPlatforms: 'Show all platforms',
                 hidePlatforms: 'Hide extra platforms',
                 copyCode: 'Copy code',
+                downloadCode: 'Download',
                 testConsole: 'Test in console',
                 saveFavorite: 'Save favorite',
                 heatmapTitle: 'Frequency map (365 days)',
@@ -614,6 +900,9 @@
                 codeCopied: 'Code copied.',
                 downloaded: 'Code file downloaded.',
                 consoleLogged: 'Test result is in the browser console (F12).',
+                consoleTestHeader: '=== CRON TEST ===',
+                consoleExpressionLabel: 'Expression',
+                consoleDescriptionLabel: 'Description',
                 cannotSaveInvalid: 'Cannot save: schedule is invalid.',
                 favoritePrompt: 'Name for favorite schedule:',
                 unnamed: 'Unnamed schedule',
@@ -649,10 +938,72 @@
                 heroStartBody: 'Beginner houdt de eerste keuze eenvoudig. Advanced opent de volledige cron-matrix.',
                 heroBenefit1: 'Valideer vóór export',
                 heroBenefit2: 'Tijdzonebewuste previews',
+                pathKicker: 'Kies je pad',
+                pathTitle: 'Hoe wil je je planning opbouwen?',
+                pathSubtitle: 'Kies de Easy wizard met modals, of ga voor Advanced met volledige veldcontrole.',
+                pathEasyKicker: 'Easy pad',
+                pathEasyTitle: 'Wizard in modals',
+                pathEasyDesc: 'Beantwoord enkele vragen over frequentie, tijd en tijdzone. Cronjobber maakt de expressie voor je.',
+                pathEasyBadge: 'Beste voor snelle setup',
+                pathAdvancedKicker: 'Advanced pad',
+                pathAdvancedTitle: 'Volledige controle',
+                pathAdvancedDesc: 'Gebruik alle cron-velden, presets, validatie, run-previews, heatmap en code-export in één werkruimte.',
+                pathAdvancedBadge: 'Beste voor precisie',
+                wizardKicker: 'Easy wizard',
+                wizardTitle: 'Bouw je planning in begeleide stappen',
+                wizardClose: 'Sluiten',
+                wizardStep1Label: '1. Kies frequentie',
+                wizardFrequencyDaily: 'Elke dag',
+                wizardFrequencyWeekdays: 'Werkdagen',
+                wizardFrequencyHourly: 'Elk uur',
+                wizardFrequencyInterval15: 'Elke 15 minuten',
+                wizardFrequencyCustom: 'Aangepaste tekst',
+                wizardCustomPlaceholder: 'bijv. elke werkdag om 09:00',
+                wizardStep2Label: '2. Tijd, dag en maand',
+                wizardStep2Help: 'Gebruik deze filters om je planning verder te verfijnen.',
+                wizardDayLabel: 'Dag',
+                wizardDayAny: 'Elke dag',
+                wizardDayWeekdays: 'Werkdagen',
+                wizardDayWeekends: 'Weekend',
+                wizardDayMon: 'Maandag',
+                wizardDayTue: 'Dinsdag',
+                wizardDayWed: 'Woensdag',
+                wizardDayThu: 'Donderdag',
+                wizardDayFri: 'Vrijdag',
+                wizardDaySat: 'Zaterdag',
+                wizardDaySun: 'Zondag',
+                wizardMonthLabel: 'Maand',
+                wizardMonthAny: 'Elke maand',
+                wizardMonth1: 'Januari',
+                wizardMonth2: 'Februari',
+                wizardMonth3: 'Maart',
+                wizardMonth4: 'April',
+                wizardMonth5: 'Mei',
+                wizardMonth6: 'Juni',
+                wizardMonth7: 'Juli',
+                wizardMonth8: 'Augustus',
+                wizardMonth9: 'September',
+                wizardMonth10: 'Oktober',
+                wizardMonth11: 'November',
+                wizardMonth12: 'December',
+                wizardMiniTitle: 'Live preview',
+                wizardMiniNextLabel: 'Volgende run',
+                wizardStep3Label: '3. Kies tijdzone',
+                wizardStep4Label: '4. Controle',
+                wizardStep4Summary: 'Deze wizard genereert:',
+                wizardBack: 'Terug',
+                wizardNext: 'Volgende',
+                wizardApply: 'Planning toepassen',
                 languageLabel: 'Taal',
                 howTitle: 'Zo werkt de app',
                 howSubtitle: '1) Kies een schema, 2) controleer of de planning klopt, 3) kies waar je het draait en kopieer je code.',
                 workflowLabel: 'Workflow',
+                workflowStepLabel1: 'Stap 1',
+                workflowStepLabel2: 'Stap 2',
+                workflowStepLabel3: 'Stap 3',
+                workflowStepDesc1: 'Start eenvoudig en verfijn alleen waar nodig.',
+                workflowStepDesc2: 'Bekijk eerst de volgende runs voordat je exporteert.',
+                workflowStepDesc3: 'Kopieer platformspecifieke code in één klik.',
                 inputLabel: 'Invoer',
                 reviewLabel: 'Controle',
                 exportLabel: 'Export',
@@ -672,14 +1023,17 @@
                 presetSubtitleWork: 'Patronen voor werkdagen en kantooruren',
                 presetSubtitleMaintenance: 'Back-ups, opschoning en scans',
                 presetSubtitleCalendar: 'Langere cycli en datumgebonden jobs',
+                presetCronLabel: 'Cron',
                 step1: '1. Kies schema',
                 step2: '2. Controleer planning',
                 step3: '3. Genereer code',
                 step1Title: 'Stap 1: Kies je schema',
                 step1Subtitle: 'Start eenvoudig met tekst of ga handmatig per cron-veld.',
                 modeLabel: 'Modus',
+                modeGroupAria: 'Kies modus',
                 modeBeginner: 'Beginner',
                 modeAdvanced: 'Gevorderd',
+                modeHelp: 'Beginner houdt de interface gefocust. Gevorderd geeft volledige cron-controle.',
                 naturalLabel: 'Leg uit wanneer het moet draaien',
                 naturalPlaceholder: 'bijv. elke werkdag om 09:00',
                 parseNatural: 'Schema omzetten',
@@ -690,14 +1044,48 @@
                 quick3: 'Elke 15 minuten',
                 timezoneLabel: 'Tijdzone',
                 toStep2: 'Volgende: controleer planning',
+                advancedMinuteLabel: 'Minuut (0-59)',
+                minuteOptEvery: 'Elke minuut (*)',
+                minuteOptAt00: 'Op :00',
+                minuteOpt5: 'Elke 5 min (*/5)',
+                minuteOpt15: 'Elke 15 min (*/15)',
+                minuteOpt0030: 'Op :00 en :30',
+                advancedHourLabel: 'Uur (0-23)',
+                hourOptEvery: 'Elk uur (*)',
+                hourOptMidnight: 'Middernacht (0)',
+                hourOpt2: 'Elke 2 uur (*/2)',
+                hourOptOffice: 'Kantooruren (9-17)',
+                advancedDomLabel: 'Dag van maand (1-31)',
+                domOptEvery: 'Elke dag (*)',
+                domOptFirst: 'Eerste dag (1)',
+                domOptMid: 'Halverwege maand (15)',
+                domOptFirstMid: '1e en 15e',
+                advancedMonthLabel: 'Maand (1-12)',
+                monthOptEvery: 'Elke maand (*)',
+                monthOptJan: 'Januari (1)',
+                monthOptSummer: 'Zomer (6-8)',
+                monthOptDec: 'December (12)',
+                advancedDowLabel: 'Dag van week (0-6, 0=Zo)',
+                dowOptEvery: 'Elke dag (*)',
+                dowOptWeekdays: 'Werkdagen (1-5)',
+                dowOptWeekend: 'Weekend (0,6)',
+                dowOptMonday: 'Alleen maandag',
+                advancedTip: 'Tip: gebruik * voor alle waarden, komma\'s voor lijsten, koppeltekens voor bereiken en / voor intervallen.',
+                liveKicker: 'Live commandocentrum',
                 liveTitle: 'Live samenvatting',
                 copyCron: 'Kopieer cron',
+                validatedOutputLabel: 'Gevalideerde output',
                 domDowTip: 'Let op: dag van maand en weekdag zijn aparte filters. Combineer bewust om onverwachte planning te voorkomen.',
                 mapMinute: 'minuut',
                 mapHour: 'uur',
                 mapDay: 'dag',
                 mapMonth: 'maand',
                 mapWeekday: 'weekdag',
+                mapMinuteTitle: 'Minuut (0-59)',
+                mapHourTitle: 'Uur (0-23)',
+                mapDayTitle: 'Dag van maand (1-31)',
+                mapMonthTitle: 'Maand (1-12)',
+                mapWeekdayTitle: 'Dag van week (0-6)',
                 statusLabel: 'Status',
                 tzStatusLabel: 'Tijdzone',
                 nextRunLabel: 'Volgende run',
@@ -711,9 +1099,15 @@
                 step3Title: 'Stap 3: Genereer code',
                 step3Subtitle: 'Kies eerst waar je schema draait, kopieer daarna je snippet.',
                 platformLabel: 'Waar wil je dit draaien?',
+                platformOptBash: 'Linux crontab (Bash)',
+                platformOptNode: 'Node.js',
+                platformOptPython: 'Python',
+                platformOptJava: 'Java (Quartz)',
+                platformOptDocker: 'Docker / Kubernetes',
                 showPlatforms: 'Toon alle platforms',
                 hidePlatforms: 'Verberg extra platforms',
                 copyCode: 'Kopieer code',
+                downloadCode: 'Downloaden',
                 testConsole: 'Test in console',
                 saveFavorite: 'Opslaan als favoriet',
                 heatmapTitle: 'Frequentiekaart (365 dagen)',
@@ -736,6 +1130,9 @@
                 codeCopied: 'Code gekopieerd.',
                 downloaded: 'Codebestand gedownload.',
                 consoleLogged: 'Testresultaat staat in de browserconsole (F12).',
+                consoleTestHeader: '=== CRON TEST ===',
+                consoleExpressionLabel: 'Expressie',
+                consoleDescriptionLabel: 'Beschrijving',
                 cannotSaveInvalid: 'Kan niet opslaan: planning is niet geldig.',
                 favoritePrompt: 'Naam voor favoriet schema:',
                 unnamed: 'Onbenoemd schema',
@@ -769,6 +1166,134 @@
                 value = value.replaceAll(`{${name}}`, vars[name]);
             });
             return value;
+        }
+
+        function showBuilder(path) {
+            document.getElementById('path-gate').classList.add('hidden');
+            document.getElementById('builder-shell').classList.remove('hidden');
+
+            if (path === 'advanced') {
+                applyMode('advanced', true);
+                setStep(1);
+            } else {
+                applyMode('beginner', true);
+                setStep(2);
+            }
+
+            document.getElementById('builder-shell').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function setWizardStep(step) {
+            wizardStep = Math.max(1, Math.min(4, step));
+            document.querySelectorAll('.wizard-step').forEach(panel => {
+                panel.classList.toggle('is-hidden', Number(panel.dataset.step) !== wizardStep);
+            });
+
+            document.querySelectorAll('#wizard-dots .wizard-dot').forEach(dot => {
+                dot.classList.toggle('active', Number(dot.dataset.dot) === wizardStep);
+            });
+
+            document.getElementById('wizard-back').disabled = wizardStep === 1;
+            document.getElementById('wizard-next').classList.toggle('hidden', wizardStep === 4);
+            document.getElementById('wizard-apply').classList.toggle('hidden', wizardStep !== 4);
+
+            if (wizardStep === 4) {
+                updateWizardReview();
+            }
+        }
+
+        function openWizard() {
+            wizardStep = 1;
+            document.getElementById('wizard-timezone').value = document.getElementById('timezone').value;
+            document.getElementById('wizard-day').value = '*';
+            document.getElementById('wizard-month').value = '*';
+            document.getElementById('easy-wizard').classList.remove('hidden');
+            document.getElementById('easy-wizard').setAttribute('aria-hidden', 'false');
+            setWizardStep(1);
+            updateWizardMiniPreview();
+        }
+
+        function closeWizard() {
+            document.getElementById('easy-wizard').classList.add('hidden');
+            document.getElementById('easy-wizard').setAttribute('aria-hidden', 'true');
+        }
+
+        function getWizardCron() {
+            const frequency = document.getElementById('wizard-frequency').value;
+            const timeValue = document.getElementById('wizard-time').value || '09:00';
+            const dayFilter = document.getElementById('wizard-day').value;
+            const monthFilter = document.getElementById('wizard-month').value;
+            const [hourRaw, minuteRaw] = timeValue.split(':');
+            const hour = String(parseInt(hourRaw || '9', 10));
+            const minute = String(parseInt(minuteRaw || '0', 10));
+
+            let cron = `${minute} ${hour} * * *`;
+
+            if (frequency === 'custom') {
+                const customText = document.getElementById('wizard-custom-text').value.trim();
+                cron = customText ? naturalToCron(customText) : cron;
+            } else if (frequency === 'weekdays') {
+                cron = `${minute} ${hour} * * 1-5`;
+            } else if (frequency === 'hourly') {
+                cron = '0 * * * *';
+            } else if (frequency === 'interval15') {
+                cron = '*/15 * * * *';
+            }
+
+            const parts = cron.trim().split(' ');
+            if (parts.length !== 5) return cron;
+            if (monthFilter !== '*') parts[3] = monthFilter;
+            if (dayFilter !== '*') parts[4] = dayFilter;
+
+            return parts.join(' ');
+        }
+
+        function updateWizardReview() {
+            const cron = getWizardCron();
+            const parts = cron.split(' ');
+            const result = parseCron(parts[0], parts[1], parts[2], parts[3], parts[4]);
+            document.getElementById('wizard-review-cron').textContent = cron;
+            document.getElementById('wizard-review-human').textContent = result.humanText;
+        }
+
+        function updateWizardMiniPreview() {
+            const cron = getWizardCron();
+            document.getElementById('wizard-mini-cron').textContent = cron;
+
+            const parts = cron.split(' ');
+            if (parts.length !== 5) {
+                document.getElementById('wizard-mini-human').textContent = t('invalidSchedule');
+                document.getElementById('wizard-mini-next').textContent = '-';
+                return;
+            }
+
+            const result = parseCron(parts[0], parts[1], parts[2], parts[3], parts[4]);
+            document.getElementById('wizard-mini-human').textContent = result.humanText;
+
+            if (result.valid && result.nextRuns.length > 0) {
+                const tz = document.getElementById('wizard-timezone').value || 'UTC';
+                const locale = currentLanguage === 'nl' ? 'nl-NL' : 'en-US';
+                const nextRun = result.nextRuns[0];
+                const absoluteText = nextRun.toLocaleString(locale, {
+                    timeZone: tz,
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                });
+                const relativeText = calculateTimeUntil(nextRun);
+                document.getElementById('wizard-mini-next').textContent = `${absoluteText} (${relativeText})`;
+            } else {
+                document.getElementById('wizard-mini-next').textContent = '-';
+            }
+        }
+
+        function applyWizardSchedule() {
+            const cron = getWizardCron();
+            setCron(cron);
+            document.getElementById('timezone').value = document.getElementById('wizard-timezone').value;
+            updateUI();
+            closeWizard();
+            showBuilder('easy');
+            showToast(t('textConverted'));
         }
 
         const fields = {
@@ -891,10 +1416,72 @@
             document.getElementById('hero-start-body').textContent = t('heroStartBody');
             document.getElementById('hero-benefit-1').textContent = t('heroBenefit1');
             document.getElementById('hero-benefit-2').textContent = t('heroBenefit2');
+            document.getElementById('path-kicker').textContent = t('pathKicker');
+            document.getElementById('path-title').textContent = t('pathTitle');
+            document.getElementById('path-subtitle').textContent = t('pathSubtitle');
+            document.getElementById('path-easy-kicker').textContent = t('pathEasyKicker');
+            document.getElementById('path-easy-title').textContent = t('pathEasyTitle');
+            document.getElementById('path-easy-desc').textContent = t('pathEasyDesc');
+            document.getElementById('path-easy-badge').textContent = t('pathEasyBadge');
+            document.getElementById('path-advanced-kicker').textContent = t('pathAdvancedKicker');
+            document.getElementById('path-advanced-title').textContent = t('pathAdvancedTitle');
+            document.getElementById('path-advanced-desc').textContent = t('pathAdvancedDesc');
+            document.getElementById('path-advanced-badge').textContent = t('pathAdvancedBadge');
+            document.getElementById('wizard-kicker').textContent = t('wizardKicker');
+            document.getElementById('wizard-title').textContent = t('wizardTitle');
+            document.getElementById('wizard-close').textContent = t('wizardClose');
+            document.getElementById('wizard-step1-label').textContent = t('wizardStep1Label');
+            document.getElementById('wizard-frequency-daily').textContent = t('wizardFrequencyDaily');
+            document.getElementById('wizard-frequency-weekdays').textContent = t('wizardFrequencyWeekdays');
+            document.getElementById('wizard-frequency-hourly').textContent = t('wizardFrequencyHourly');
+            document.getElementById('wizard-frequency-interval15').textContent = t('wizardFrequencyInterval15');
+            document.getElementById('wizard-frequency-custom').textContent = t('wizardFrequencyCustom');
+            document.getElementById('wizard-custom-text').placeholder = t('wizardCustomPlaceholder');
+            document.getElementById('wizard-step2-label').textContent = t('wizardStep2Label');
+            document.getElementById('wizard-step2-help').textContent = t('wizardStep2Help');
+            document.getElementById('wizard-day-label').textContent = t('wizardDayLabel');
+            document.getElementById('wizard-day-any').textContent = t('wizardDayAny');
+            document.getElementById('wizard-day-weekdays').textContent = t('wizardDayWeekdays');
+            document.getElementById('wizard-day-weekends').textContent = t('wizardDayWeekends');
+            document.getElementById('wizard-day-mon').textContent = t('wizardDayMon');
+            document.getElementById('wizard-day-tue').textContent = t('wizardDayTue');
+            document.getElementById('wizard-day-wed').textContent = t('wizardDayWed');
+            document.getElementById('wizard-day-thu').textContent = t('wizardDayThu');
+            document.getElementById('wizard-day-fri').textContent = t('wizardDayFri');
+            document.getElementById('wizard-day-sat').textContent = t('wizardDaySat');
+            document.getElementById('wizard-day-sun').textContent = t('wizardDaySun');
+            document.getElementById('wizard-month-label').textContent = t('wizardMonthLabel');
+            document.getElementById('wizard-month-any').textContent = t('wizardMonthAny');
+            document.getElementById('wizard-month-1').textContent = t('wizardMonth1');
+            document.getElementById('wizard-month-2').textContent = t('wizardMonth2');
+            document.getElementById('wizard-month-3').textContent = t('wizardMonth3');
+            document.getElementById('wizard-month-4').textContent = t('wizardMonth4');
+            document.getElementById('wizard-month-5').textContent = t('wizardMonth5');
+            document.getElementById('wizard-month-6').textContent = t('wizardMonth6');
+            document.getElementById('wizard-month-7').textContent = t('wizardMonth7');
+            document.getElementById('wizard-month-8').textContent = t('wizardMonth8');
+            document.getElementById('wizard-month-9').textContent = t('wizardMonth9');
+            document.getElementById('wizard-month-10').textContent = t('wizardMonth10');
+            document.getElementById('wizard-month-11').textContent = t('wizardMonth11');
+            document.getElementById('wizard-month-12').textContent = t('wizardMonth12');
+            document.getElementById('wizard-mini-title').textContent = t('wizardMiniTitle');
+            document.getElementById('wizard-mini-next-label').textContent = t('wizardMiniNextLabel');
+            document.getElementById('wizard-step3-label').textContent = t('wizardStep3Label');
+            document.getElementById('wizard-step4-label').textContent = t('wizardStep4Label');
+            document.getElementById('wizard-step4-summary').textContent = t('wizardStep4Summary');
+            document.getElementById('wizard-back').textContent = t('wizardBack');
+            document.getElementById('wizard-next').textContent = t('wizardNext');
+            document.getElementById('wizard-apply').textContent = t('wizardApply');
             document.getElementById('language-label').textContent = t('languageLabel');
             document.getElementById('workflow-label').textContent = t('workflowLabel');
             document.getElementById('how-title').textContent = t('howTitle');
             document.getElementById('how-subtitle').textContent = t('howSubtitle');
+            document.getElementById('workflow-step-label-1').textContent = t('workflowStepLabel1');
+            document.getElementById('workflow-step-label-2').textContent = t('workflowStepLabel2');
+            document.getElementById('workflow-step-label-3').textContent = t('workflowStepLabel3');
+            document.getElementById('workflow-step-desc-1').textContent = t('workflowStepDesc1');
+            document.getElementById('workflow-step-desc-2').textContent = t('workflowStepDesc2');
+            document.getElementById('workflow-step-desc-3').textContent = t('workflowStepDesc3');
             document.querySelector('#stepper [data-step="1"]').textContent = t('step1');
             document.querySelector('#stepper [data-step="2"]').textContent = t('step2');
             document.querySelector('#stepper [data-step="3"]').textContent = t('step3');
@@ -902,8 +1489,10 @@
             document.getElementById('step1-title').textContent = t('step1Title');
             document.getElementById('step1-subtitle').textContent = t('step1Subtitle');
             document.getElementById('mode-label').textContent = t('modeLabel');
+            document.getElementById('mode-group').setAttribute('aria-label', t('modeGroupAria'));
             document.getElementById('mode-beginner').textContent = t('modeBeginner');
             document.getElementById('mode-advanced').textContent = t('modeAdvanced');
+            document.getElementById('mode-help').textContent = t('modeHelp');
             document.getElementById('natural-label').textContent = t('naturalLabel');
             document.getElementById('natural-input').placeholder = t('naturalPlaceholder');
             document.getElementById('parse-natural').textContent = t('parseNatural');
@@ -914,14 +1503,48 @@
             document.getElementById('quick-chip-3').textContent = t('quick3');
             document.getElementById('timezone-label').textContent = t('timezoneLabel');
             document.getElementById('to-step-2').textContent = t('toStep2');
+            document.getElementById('advanced-minute-label').textContent = t('advancedMinuteLabel');
+            document.getElementById('minute-opt-every').textContent = t('minuteOptEvery');
+            document.getElementById('minute-opt-at00').textContent = t('minuteOptAt00');
+            document.getElementById('minute-opt-5').textContent = t('minuteOpt5');
+            document.getElementById('minute-opt-15').textContent = t('minuteOpt15');
+            document.getElementById('minute-opt-0030').textContent = t('minuteOpt0030');
+            document.getElementById('advanced-hour-label').textContent = t('advancedHourLabel');
+            document.getElementById('hour-opt-every').textContent = t('hourOptEvery');
+            document.getElementById('hour-opt-midnight').textContent = t('hourOptMidnight');
+            document.getElementById('hour-opt-2').textContent = t('hourOpt2');
+            document.getElementById('hour-opt-office').textContent = t('hourOptOffice');
+            document.getElementById('advanced-dom-label').textContent = t('advancedDomLabel');
+            document.getElementById('dom-opt-every').textContent = t('domOptEvery');
+            document.getElementById('dom-opt-first').textContent = t('domOptFirst');
+            document.getElementById('dom-opt-mid').textContent = t('domOptMid');
+            document.getElementById('dom-opt-first-mid').textContent = t('domOptFirstMid');
+            document.getElementById('advanced-month-label').textContent = t('advancedMonthLabel');
+            document.getElementById('month-opt-every').textContent = t('monthOptEvery');
+            document.getElementById('month-opt-jan').textContent = t('monthOptJan');
+            document.getElementById('month-opt-summer').textContent = t('monthOptSummer');
+            document.getElementById('month-opt-dec').textContent = t('monthOptDec');
+            document.getElementById('advanced-dow-label').textContent = t('advancedDowLabel');
+            document.getElementById('dow-opt-every').textContent = t('dowOptEvery');
+            document.getElementById('dow-opt-weekdays').textContent = t('dowOptWeekdays');
+            document.getElementById('dow-opt-weekend').textContent = t('dowOptWeekend');
+            document.getElementById('dow-opt-monday').textContent = t('dowOptMonday');
+            document.getElementById('advanced-tip').textContent = t('advancedTip');
             document.getElementById('presetsLabel').textContent = t('presetsLabel');
+            document.getElementById('live-kicker').textContent = t('liveKicker');
             document.getElementById('live-title').textContent = t('liveTitle');
             document.getElementById('copy-cron').textContent = t('copyCron');
+            document.getElementById('validated-output-label').textContent = t('validatedOutputLabel');
             document.getElementById('map-minute').textContent = t('mapMinute');
             document.getElementById('map-hour').textContent = t('mapHour');
             document.getElementById('map-dom').textContent = t('mapDay');
             document.getElementById('map-month').textContent = t('mapMonth');
             document.getElementById('map-dow').textContent = t('mapWeekday');
+            document.getElementById('map-minute').setAttribute('title', t('mapMinuteTitle'));
+            document.getElementById('map-hour').setAttribute('title', t('mapHourTitle'));
+            document.getElementById('map-dom').setAttribute('title', t('mapDayTitle'));
+            document.getElementById('map-month').setAttribute('title', t('mapMonthTitle'));
+            document.getElementById('map-dow').setAttribute('title', t('mapWeekdayTitle'));
             document.getElementById('dom-dow-tip').textContent = t('domDowTip');
             document.getElementById('review-label').textContent = t('reviewLabel');
             document.getElementById('status-label').textContent = t('statusLabel');
@@ -937,8 +1560,14 @@
             document.getElementById('step3-title').textContent = t('step3Title');
             document.getElementById('step3-subtitle').textContent = t('step3Subtitle');
             document.getElementById('platform-label').textContent = t('platformLabel');
+            document.getElementById('platform-opt-bash').textContent = t('platformOptBash');
+            document.getElementById('platform-opt-node').textContent = t('platformOptNode');
+            document.getElementById('platform-opt-python').textContent = t('platformOptPython');
+            document.getElementById('platform-opt-java').textContent = t('platformOptJava');
+            document.getElementById('platform-opt-docker').textContent = t('platformOptDocker');
             document.getElementById('show-platforms').textContent = allPlatformsShown ? t('hidePlatforms') : t('showPlatforms');
             document.getElementById('copy-code').textContent = t('copyCode');
+            document.getElementById('download-code').textContent = t('downloadCode');
             document.getElementById('test-run').textContent = t('testConsole');
             document.getElementById('save-favorite').textContent = t('saveFavorite');
             document.getElementById('coverage-label').textContent = t('coverageLabel');
@@ -951,6 +1580,7 @@
             renderPresetGroups();
             applyMode(currentMode, false);
             updateUI();
+            updateWizardMiniPreview();
         }
 
         function fieldLabel(key) {
@@ -1024,12 +1654,22 @@
                 items.forEach(preset => {
                     const button = document.createElement('button');
                     button.className = 'preset-card rounded-2xl p-3 text-left';
-                    button.innerHTML = `<span class="block font-semibold text-slate-900">${preset.name}</span><span class="block mt-1 text-xs text-slate-600">${preset.desc}</span>`;
-                    button.title = preset.desc;
+                    const parts = preset.cron.trim().split(' ');
+                    const parsedPreset = parts.length === 5
+                        ? parseCron(parts[0], parts[1], parts[2], parts[3], parts[4])
+                        : null;
+                    const localizedName = parsedPreset ? parsedPreset.humanText : preset.name;
+                    const locale = currentLanguage === 'nl' ? 'nl-NL' : 'en-US';
+                    const nextRunText = parsedPreset && parsedPreset.nextRuns.length
+                        ? parsedPreset.nextRuns[0].toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+                        : '-';
+                    const localizedDesc = `${t('nextRunLabel')}: ${nextRunText}`;
+                    button.innerHTML = `<span class="block font-semibold text-slate-900">${localizedName || preset.name}</span><span class="block mt-1 text-xs text-slate-600">${localizedDesc}</span>`;
+                    button.title = localizedDesc;
                     button.addEventListener('click', () => {
                         setCron(preset.cron);
                         setStep(2);
-                        showToast(t('presetLoaded', { name: preset.name }));
+                        showToast(t('presetLoaded', { name: localizedName || preset.name }));
                     });
                     grid.appendChild(button);
                 });
@@ -1540,9 +2180,9 @@
 
         document.getElementById('test-run').addEventListener('click', () => {
             const result = parseCron(fields.minute.value, fields.hour.value, fields.dom.value, fields.month.value, fields.dow.value);
-            console.log('=== CRON TEST ===');
-            console.log('Expressie:', result.cronStr);
-            console.log('Beschrijving:', result.humanText);
+            console.log(t('consoleTestHeader'));
+            console.log(`${t('consoleExpressionLabel')}:`, result.cronStr);
+            console.log(`${t('consoleDescriptionLabel')}:`, result.humanText);
             result.nextRuns.slice(0, 10).forEach((run, i) => {
                 console.log(`${i + 1}. ${run.toISOString()}`);
             });
@@ -1572,12 +2212,48 @@
 
         document.getElementById('language-select').addEventListener('change', event => {
             currentLanguage = event.target.value;
+            setCookie('cronPlannerLang', currentLanguage, 365);
             applyLanguage();
+        });
+
+        document.getElementById('path-advanced').addEventListener('click', () => {
+            showBuilder('advanced');
+        });
+
+        document.getElementById('path-easy').addEventListener('click', () => {
+            openWizard();
+        });
+
+        document.getElementById('wizard-close').addEventListener('click', closeWizard);
+        document.getElementById('wizard-back').addEventListener('click', () => setWizardStep(wizardStep - 1));
+        document.getElementById('wizard-next').addEventListener('click', () => setWizardStep(wizardStep + 1));
+        document.getElementById('wizard-apply').addEventListener('click', applyWizardSchedule);
+
+        document.getElementById('wizard-frequency').addEventListener('change', event => {
+            const customInput = document.getElementById('wizard-custom-text');
+            customInput.classList.toggle('hidden', event.target.value !== 'custom');
+            updateWizardMiniPreview();
+        });
+
+        ['wizard-time', 'wizard-day', 'wizard-month', 'wizard-timezone', 'wizard-custom-text'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateWizardMiniPreview);
+            document.getElementById(id).addEventListener('change', updateWizardMiniPreview);
+        });
+
+        document.getElementById('easy-wizard').addEventListener('click', event => {
+            if (event.target.id === 'easy-wizard') {
+                closeWizard();
+            }
         });
 
         renderPresetGroups();
 
-        currentLanguage = 'en';
+        const savedLanguage = getCookie('cronPlannerLang');
+        if (savedLanguage === 'nl' || savedLanguage === 'en') {
+            currentLanguage = savedLanguage;
+        } else {
+            currentLanguage = (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en';
+        }
         document.getElementById('language-select').value = currentLanguage;
         currentMode = getCookie('cronPlannerMode') === 'advanced' ? 'advanced' : 'beginner';
         setStep(1);
